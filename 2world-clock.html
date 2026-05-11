@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>World Clock Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Share+Tech+Mono&family=Orbitron:wght@700;900&family=VT323&family=Rajdhani:wght@600;700&family=Exo+2:ital,wght@0,400;0,700&family=Oxanium:wght@400;700&family=Chakra+Petch:wght@400;700&family=Space+Mono:wght@400;700&family=Oswald:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0e1a;--surface:#111827;--card:#1a2235;--border:#1e2d45;--accent:#00d4ff;--accent2:#ff6b35;--text:#f0f4ff;--muted:#8899bb;--home:#00ffaa;--am:#f59e0b;--pm:#a78bfa;--font-ui:'Nunito',sans-serif;--font-mono:'Share Tech Mono',monospace;--font-disp:'Orbitron',monospace;--font-clock:'Orbitron',monospace}
+body.th-midnight{--bg:#0a0e1a;--surface:#111827;--card:#1a2235;--border:#1e2d45;--accent:#00d4ff;--accent2:#ff6b35;--text:#f0f4ff;--muted:#8899bb;--home:#00ffaa;--am:#f59e0b;--pm:#a78bfa}
+body.th-dawn{--bg:#fdf6ec;--surface:#fff8f2;--card:#fff3e8;--border:#e8d0b0;--accent:#c05010;--accent2:#8b1a8b;--text:#160800;--muted:#7a5a40;--home:#0a6a30;--am:#92400e;--pm:#5b21b6}
+body.th-forest{--bg:#071409;--surface:#0e1f10;--card:#142816;--border:#1a3a1c;--accent:#4ade80;--accent2:#facc15;--text:#e8ffe8;--muted:#4a7a4a;--home:#86efac;--am:#fbbf24;--pm:#a78bfa}
+body.th-dusk{--bg:#130820;--surface:#1e1030;--card:#261540;--border:#381e58;--accent:#e040fb;--accent2:#ff6e40;--text:#f8eeff;--muted:#9060b0;--home:#ce93d8;--am:#ffd54f;--pm:#e040fb}
+body.th-paper{--bg:#f2ede4;--surface:#e8e0d4;--card:#ddd5c8;--border:#c0aa90;--accent:#1a56db;--accent2:#c0392b;--text:#100800;--muted:#5a4030;--home:#057748;--am:#92400e;--pm:#5b21b6}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-ui);min-height:100vh;transition:background .4s,color .4s}
+
+/* ── HEADER ── */
+header{display:flex;align-items:center;padding:10px 20px;border-bottom:1px solid var(--border);background:var(--surface);gap:8px;position:sticky;top:0;z-index:60;flex-wrap:nowrap}
+.logo{font-family:var(--font-disp);font-size:.9rem;color:var(--accent);letter-spacing:.08em;display:flex;align-items:center;gap:7px;cursor:pointer;user-select:none;flex-shrink:0;min-width:0}
+.logo-main{white-space:nowrap}.logo span{color:var(--home)}
+.logo-sub{font-family:var(--font-ui);font-size:.6rem;color:var(--muted);font-weight:600;letter-spacing:.04em;transition:opacity .3s;white-space:nowrap}
+header.scrolled .logo-sub{opacity:0;width:0;overflow:hidden}
+
+/* header clock on scroll */
+.hdr-clock{display:none;align-items:center;gap:7px;flex:1;padding:0 10px;min-width:0;overflow:hidden}
+header.scrolled .hdr-clock{display:flex}
+.hc-flag{width:18px;height:18px;flex-shrink:0;vertical-align:middle}
+.hc-city{font-size:.74rem;font-weight:800;color:var(--text);white-space:nowrap;flex-shrink:0}
+.hc-time{font-family:var(--font-clock);font-size:1.05rem;color:var(--accent);font-weight:700;letter-spacing:.04em;white-space:nowrap;flex-shrink:0}
+.hc-colon{animation:blink 1s step-start infinite;display:inline}
+.hc-ap{font-size:.6rem;font-weight:900;letter-spacing:.1em;padding:2px 6px;border-radius:5px;flex-shrink:0}
+.hc-ap.am{background:rgba(245,158,11,.2);color:var(--am);border:1px solid var(--am)}
+.hc-ap.pm{background:rgba(167,139,250,.2);color:var(--pm);border:1px solid var(--pm)}
+.hc-date{font-size:.6rem;color:var(--muted);font-weight:700;white-space:nowrap;flex-shrink:0}
+@media(max-width:700px){.hc-date{display:none}}
+
+/* right side controls */
+.hdr-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+
+/* ── FONT DROPDOWN ── */
+.font-wrap{position:relative;display:inline-block}
+.font-trigger{background:var(--card);border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:4px 10px;font-size:.7rem;cursor:pointer;font-family:var(--font-ui);font-weight:700;display:flex;align-items:center;gap:5px;white-space:nowrap;transition:all .2s}
+.font-trigger:hover,.font-wrap.open .font-trigger{border-color:var(--accent);color:var(--accent)}
+.font-trigger .fa{font-size:.65rem;transition:transform .2s}
+.font-wrap.open .font-trigger .fa{transform:rotate(180deg)}
+.font-menu{position:absolute;top:calc(100% + 4px);right:0;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px;display:none;grid-template-columns:1fr 1fr;gap:5px;z-index:80;min-width:260px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+.font-wrap.open .font-menu{display:grid}
+.fbtn{background:var(--card);border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:6px 8px;font-size:.62rem;cursor:pointer;transition:all .15s;font-family:var(--font-ui);font-weight:700;text-align:left;line-height:1.3}
+.fbtn:hover{border-color:var(--accent);color:var(--text)}
+.fbtn.active{background:var(--accent);color:#000;border-color:var(--accent)}
+.fbtn .fp{display:block;font-size:.85rem;font-weight:700;margin-top:2px;letter-spacing:.02em;color:inherit}
+
+/* ── THEMES ── */
+.themes{display:flex;gap:4px;align-items:center}
+.theme-lbl{font-size:.58rem;color:var(--muted);margin-right:2px;text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}
+.tbtn{width:20px;height:20px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:transform .2s,border-color .2s;flex-shrink:0}
+.tbtn:hover{transform:scale(1.2)}.tbtn.active{border-color:var(--accent);transform:scale(1.2)}
+.tbtn[data-t="midnight"]{background:radial-gradient(circle at 40% 40%,#1a2235,#0a0e1a)}
+.tbtn[data-t="dawn"]{background:radial-gradient(circle at 40% 40%,#fff3e8,#fdf6ec);border-color:#d4c0a0}
+.tbtn[data-t="forest"]{background:radial-gradient(circle at 40% 40%,#142816,#071409)}
+.tbtn[data-t="dusk"]{background:radial-gradient(circle at 40% 40%,#261540,#130820)}
+.tbtn[data-t="paper"]{background:radial-gradient(circle at 40% 40%,#ddd5c8,#f2ede4);border-color:#c0b090}
+
+@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:.12}}
+.cc-colon,.home-colon{animation:blink 1s step-start infinite;display:inline}
+
+/* ── MAIN ── */
+main{padding:16px 20px;max-width:1800px;margin:0 auto}
+@media(max-width:600px){header{padding:8px 12px}main{padding:10px 12px}}
+
+/* ── HOME CARD ── */
+.home-card{background:var(--card);border:2px solid var(--home);border-radius:18px;padding:18px 22px;display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;box-shadow:0 0 40px rgba(0,255,170,.08);flex-wrap:wrap;gap:12px}
+.home-left h2{font-family:var(--font-disp);font-size:.66rem;color:var(--home);letter-spacing:.12em;margin-bottom:5px;font-weight:700}
+.home-time-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:5px}
+.home-digits{font-family:var(--font-clock);font-size:clamp(2rem,5vw,3.6rem);color:#fff;line-height:1;letter-spacing:.04em;font-weight:900}
+body.th-dawn .home-digits,body.th-paper .home-digits{color:var(--text)}
+.home-ss{font-size:.42em;color:var(--muted)}
+.home-ampm{font-size:.95rem;font-family:var(--font-ui);font-weight:900;letter-spacing:.14em;padding:5px 13px;border-radius:8px;line-height:1.4}
+.home-ampm.am{background:rgba(245,158,11,.2);color:var(--am);border:2px solid var(--am)}
+.home-ampm.pm{background:rgba(167,139,250,.2);color:var(--pm);border:2px solid var(--pm)}
+body.th-dawn .home-ampm.am,body.th-paper .home-ampm.am{background:rgba(146,64,14,.2);color:#7c2d12;border-color:#92400e;text-shadow:none}
+body.th-dawn .home-ampm.pm,body.th-paper .home-ampm.pm{background:rgba(91,33,182,.2);color:#3b0764;border-color:#5b21b6;text-shadow:none}
+.home-date{font-size:.82rem;color:var(--muted);margin-top:3px;font-weight:700}
+body.th-dawn .home-date,body.th-paper .home-date{color:var(--text);opacity:.85}
+.home-tz-badges{display:flex;gap:7px;flex-wrap:wrap}
+.tzb{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 10px;text-align:center;min-width:78px}
+.tzb .tl{font-size:.56rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:800}
+.tzb .tv{font-family:var(--font-mono);font-size:.82rem;color:var(--accent);margin-top:2px;font-weight:700}
+.chg-btn{background:none;border:1px dashed var(--home);color:var(--home);border-radius:6px;padding:2px 7px;font-size:.56rem;cursor:pointer;letter-spacing:.08em;font-family:var(--font-ui);margin-left:7px;font-weight:700}
+.chg-btn:hover{background:rgba(0,255,170,.12)}
+
+/* ── CONVERTER ── */
+.conv-sec{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:13px 16px;margin-bottom:12px}
+.conv-sec h3{font-size:.63rem;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);margin-bottom:9px;font-weight:800}
+.conv-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.cg{display:flex;flex-direction:column;gap:2px}
+.cg label{font-size:.56rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;font-weight:800}
+.cg select,.cg input{background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:5px 8px;font-family:var(--font-ui);font-size:.8rem;outline:none;transition:border-color .2s;cursor:pointer}
+.cg select:focus,.cg input:focus{border-color:var(--accent)}
+.cg input[type="time"]{font-family:var(--font-mono);min-width:108px}
+.cg input[type="date"]{min-width:130px}
+.arr{font-size:1.1rem;color:var(--accent2);margin-top:14px;user-select:none;flex-shrink:0}
+.cr{display:flex;flex-direction:column;gap:2px;margin-top:14px}
+.cr .rl{font-size:.56rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;font-weight:800}
+.cr .rv{font-family:var(--font-mono);font-size:1.15rem;color:var(--home);letter-spacing:.04em;font-weight:700}
+.cr .rd{font-size:.65rem;color:var(--muted)}
+
+/* ── CALENDAR ── */
+.cal-section{margin-bottom:12px}
+.cal-toggle-btn{width:100%;background:var(--card);border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:9px 14px;cursor:pointer;font-size:.74rem;font-family:var(--font-ui);font-weight:700;text-align:left;transition:all .2s;display:flex;align-items:center;justify-content:space-between}
+.cal-toggle-btn:hover{border-color:var(--accent);color:var(--text)}
+.cal-toggle-btn.open{border-color:var(--accent);color:var(--accent)}
+.cal-body{display:none;padding:12px 0;justify-content:center}
+.cal-body.open{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start}
+.cal-widget{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;width:min(288px,100%);flex-shrink:0;cursor:pointer}
+.cal-widget-lbl{font-size:.6rem;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);margin-bottom:10px;font-weight:800}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:2px}
+.cal-nav button{background:none;border:1px solid var(--border);color:var(--muted);border-radius:5px;padding:3px 7px;cursor:pointer;font-size:.72rem;transition:all .15s;font-family:var(--font-ui);font-weight:700}
+.cal-nav button:hover{border-color:var(--accent);color:var(--accent)}
+.cal-title{font-weight:900;font-size:.86rem;color:var(--text);text-align:center;flex:1}
+.cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:3px}
+.cal-wd{text-align:center;font-size:.54rem;font-weight:900;color:var(--muted);text-transform:uppercase;padding:2px 0}
+.cal-days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.cal-day{text-align:center;padding:4px 1px;font-size:.72rem;font-weight:700;border-radius:5px;cursor:pointer;line-height:1.6;color:var(--text)}
+.cal-day:hover{background:var(--surface)}
+.cal-day.other-month{color:var(--border)}
+.cal-day.today{background:var(--accent);color:#000;font-weight:900;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;margin:auto;padding:0;font-size:.7rem}
+.cal-hint{font-size:.56rem;color:var(--muted);text-align:center;margin-top:7px;font-weight:600}
+.cal-fs-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:200;align-items:center;justify-content:center}
+.cal-fs-overlay.open{display:flex}
+.cal-fs-box{background:var(--card);border:2px solid var(--accent);border-radius:22px;padding:32px 38px;width:min(540px,92vw);position:relative}
+.cal-fs-exit{position:absolute;top:13px;right:15px;background:var(--accent2);border:none;color:#fff;border-radius:7px;padding:5px 12px;cursor:pointer;font-size:.76rem;font-family:var(--font-ui);font-weight:800}
+.cal-fs-exit:hover{background:#c0392b}
+.cal-fs-box .cal-title{font-size:1.2rem}
+.cal-fs-box .cal-wd{font-size:.7rem}
+.cal-fs-box .cal-day{font-size:.95rem;padding:6px 2px}
+.cal-fs-box .cal-day.today{width:34px;height:34px;font-size:.95rem}
+.cal-fs-box .cal-nav button{font-size:.85rem;padding:5px 11px}
+
+/* ── CONTROL BAR ── */
+.ctrl-bar{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:11px 14px;margin-bottom:12px;display:flex;flex-direction:column;gap:8px}
+.ctrl-row{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.ctrl-lbl{font-size:.58rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;min-width:44px;flex-shrink:0;font-weight:800}
+.vsep{width:1px;height:18px;background:var(--border);margin:0 2px;flex-shrink:0}
+.pill{background:var(--card);border:1px solid var(--border);color:var(--muted);border-radius:20px;padding:4px 11px;font-size:.7rem;cursor:pointer;transition:all .18s;font-family:var(--font-ui);letter-spacing:.03em;white-space:nowrap;display:inline-flex;align-items:center;gap:3px;font-weight:700}
+.pill:hover{border-color:var(--accent);color:var(--text)}
+.p-a{background:var(--accent);color:#000;border-color:var(--accent)}
+.p-g{background:var(--home);color:#000;border-color:var(--home)}
+.p-p{background:#7c3aed;color:#fff;border-color:#7c3aed}
+.p-fav{background:#f43f5e;color:#fff;border-color:#f43f5e}
+.p-r{border-color:var(--accent2);color:var(--accent2)}.p-r:hover{background:var(--accent2);color:#fff}
+.sw{flex:1;min-width:150px;position:relative;display:flex}
+.sb{flex:1;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:5px 28px 5px 11px;font-family:var(--font-ui);font-size:.8rem;outline:none;transition:border-color .2s;font-weight:600}
+.sb:focus{border-color:var(--accent)}.sb::placeholder{color:var(--muted)}
+.sr{position:absolute;right:7px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:.78rem;cursor:pointer;display:none;padding:0}
+.sr:hover{color:var(--accent2)}
+
+/* ── SECTIONS ── */
+.sh{font-size:.62rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin:16px 0 7px;display:flex;align-items:center;gap:7px;font-weight:800}
+.sh::after{content:'';flex:1;height:1px;background:var(--border)}
+#pin-sec{display:none}
+
+/* ── CLOCK GRID ── */
+.cg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:11px}
+@media(max-width:480px){.cg-grid{grid-template-columns:1fr 1fr;gap:8px}}
+@media(max-width:340px){.cg-grid{grid-template-columns:1fr;gap:8px}}
+
+/* ── CLOCK CARD ── */
+.cc{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:12px 13px 26px;cursor:pointer;transition:transform .18s,border-color .18s,box-shadow .18s;position:relative;overflow:hidden;user-select:none}
+.cc:hover{transform:translateY(-3px);border-color:var(--accent);box-shadow:0 8px 28px rgba(0,0,0,.3)}
+.cc.dragging{opacity:.35;cursor:grabbing}
+.cc.drag-over{border-color:var(--home);box-shadow:0 0 18px rgba(0,255,170,.3)}
+.cc.pinned{border-color:var(--accent2)}
+.cc.fav{border-top:2px solid #f43f5e}
+.cc-reg{font-size:.52rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:2px;font-weight:800}
+.cc-city-row{display:flex;align-items:center;gap:4px;margin-bottom:1px}
+.cc-flag{width:16px;height:16px;border-radius:2px;vertical-align:middle;flex-shrink:0}
+.cc-city{font-size:.92rem;font-weight:900;color:#fff;line-height:1.2}
+body.th-dawn .cc-city,body.th-paper .cc-city{color:var(--text)}
+.cc-ctry{font-size:.66rem;font-weight:700;margin-bottom:6px}
+.reg-Asia .cc-ctry{color:#38bdf8}.reg-Europe .cc-ctry{color:#86efac}
+.reg-Americas .cc-ctry{color:#fdba74}.reg-Africa .cc-ctry{color:#fde68a}.reg-Pacific .cc-ctry{color:#6ee7b7}
+body.th-dawn .cc-ctry,body.th-paper .cc-ctry{filter:brightness(.55) saturate(1.8)}
+.cc-tr{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px}
+.cc-t{font-family:var(--font-clock);font-size:1.25rem;color:var(--accent);letter-spacing:.02em;line-height:1;font-weight:900}
+.cc-s{font-size:.62em;color:var(--muted)}
+.ap{font-size:.64rem;font-family:var(--font-ui);font-weight:900;letter-spacing:.12em;padding:2px 7px;border-radius:5px;line-height:1.5;flex-shrink:0}
+.ap.am{background:rgba(245,158,11,.18);color:var(--am);border:1.5px solid var(--am)}
+.ap.pm{background:rgba(167,139,250,.18);color:var(--pm);border:1.5px solid var(--pm)}
+body.th-dawn .ap.am,body.th-paper .ap.am{background:rgba(146,64,14,.22);color:#7c2d12;border-color:#92400e}
+body.th-dawn .ap.pm,body.th-paper .ap.pm{background:rgba(91,33,182,.22);color:#3b0764;border-color:#5b21b6}
+.cc-date{font-size:.63rem;color:#c4d4f0;margin-top:2px;line-height:1.4;font-weight:700}
+body.th-dawn .cc-date,body.th-paper .cc-date{color:var(--text);font-weight:800}
+.cc-tod{font-size:.61rem;font-weight:800;margin-top:2px;padding:1px 6px;border-radius:4px;display:inline-block}
+body.th-dawn .cc-tod,body.th-paper .cc-tod{filter:brightness(.7) saturate(2);border:1px solid currentColor}
+.cc-diff{font-size:.58rem;font-weight:700;color:#94a3b8;margin-top:2px;font-style:italic}
+body.th-dawn .cc-diff,body.th-paper .cc-diff{color:var(--muted)}
+.cc-season{font-size:.58rem;color:var(--muted);margin-top:1px;font-weight:700}
+body.th-dawn .cc-season,body.th-paper .cc-season{color:var(--text);opacity:.75}
+.cc-weather{font-size:.6rem;font-weight:800;margin-top:2px;padding:2px 6px;border-radius:4px;display:none;background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.3);color:#60a5fa;width:fit-content}
+body.th-dawn .cc-weather,body.th-paper .cc-weather{background:rgba(29,78,216,.1);border-color:rgba(29,78,216,.3);color:#1d4ed8}
+.cc-weather.loaded{display:block}
+.cc-dst{font-size:.55rem;font-weight:800;margin-top:2px}
+.cc-dst-active{color:#eab308}.cc-dst-std{color:var(--muted)}.cc-dst-none{color:var(--border)}
+.cc-tz{font-size:.57rem;color:var(--muted);margin-top:2px;font-family:var(--font-mono)}
+.cc-tzb{font-size:.54rem;color:var(--muted);margin-top:3px;font-family:var(--font-mono);line-height:1.6;border-top:1px solid var(--border);padding-top:3px}
+.cc-live{color:#fb923c;font-weight:700}
+.cc-dn{position:absolute;bottom:0;left:0;right:0;height:4px;border-radius:0 0 13px 13px}
+.cc-dn.day{background:linear-gradient(90deg,#facc15,#fb923c)}
+.cc-dn.night{background:linear-gradient(90deg,#3b82f6,#6366f1)}
+.cc-dn.dawn{background:linear-gradient(90deg,#f97316,#ec4899)}
+.cc-dn.dusk{background:linear-gradient(90deg,#7c3aed,#db2777)}
+.tod-midnight{background:rgba(99,102,241,.25);color:#a5b4fc}
+.tod-latenight{background:rgba(67,56,202,.25);color:#818cf8}
+.tod-earlymorning{background:rgba(245,158,11,.2);color:#fcd34d}
+.tod-morning{background:rgba(251,191,36,.2);color:#fde68a}
+.tod-latemorning{background:rgba(16,185,129,.2);color:#6ee7b7}
+.tod-noon{background:rgba(234,179,8,.3);color:#fef08a}
+.tod-earlyafternoon{background:rgba(249,115,22,.2);color:#fdba74}
+.tod-lateafternoon{background:rgba(239,68,68,.2);color:#fca5a5}
+.tod-evening{background:rgba(139,92,246,.2);color:#c4b5fd}
+.tod-night{background:rgba(30,27,75,.4);color:#818cf8}
+.card-confirm{position:absolute;inset:0;background:rgba(0,0,0,.85);border-radius:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;z-index:10;padding:14px;text-align:center}
+.card-confirm p{color:#fff;font-size:.78rem;font-weight:700;line-height:1.4}
+.card-confirm strong{color:var(--home);font-size:.86rem}
+.confirm-btns{display:flex;gap:7px}
+.cc-yes,.cc-no{border:none;border-radius:7px;padding:5px 14px;font-size:.72rem;font-family:var(--font-ui);font-weight:800;cursor:pointer;transition:all .15s}
+.cc-yes{background:var(--home);color:#000}.cc-yes:hover{background:#00cc88}
+.cc-no{background:var(--accent2);color:#fff}.cc-no:hover{background:#c0392b}
+.t1h{font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);margin:16px 0 7px;font-weight:800;display:flex;align-items:center;gap:7px}
+.t1h::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ── FULLSCREEN ── */
+.fs-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:200;align-items:center;justify-content:center}
+.fs-overlay.open{display:flex}
+.fs-card{background:var(--card);border:2px solid var(--accent);border-radius:22px;padding:40px 48px;min-width:300px;max-width:560px;width:90vw;position:relative;text-align:center}
+.fs-exit{position:absolute;top:14px;right:16px;background:var(--accent2);border:none;color:#fff;border-radius:7px;padding:5px 13px;cursor:pointer;font-size:.78rem;font-family:var(--font-ui);font-weight:800}
+.fs-exit:hover{background:#c0392b}
+.fs-reg{font-size:.72rem;text-transform:uppercase;letter-spacing:.15em;color:var(--muted);margin-bottom:5px;font-weight:800}
+.fs-city{font-size:2.2rem;font-weight:900;color:#fff;margin-bottom:3px;line-height:1.1}
+body.th-dawn .fs-city,body.th-paper .fs-city{color:var(--text)}
+.fs-ctry{font-size:.95rem;font-weight:700;margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:6px}
+.fs-time{font-family:var(--font-clock);font-size:clamp(3rem,9vw,5rem);color:var(--accent);letter-spacing:.04em;line-height:1;font-weight:900;margin-bottom:4px}
+.fs-ampm{font-size:1.2rem;font-family:var(--font-ui);font-weight:900;letter-spacing:.14em;padding:5px 14px;border-radius:9px;display:inline-block;margin-bottom:12px}
+.fs-ampm.am{background:rgba(245,158,11,.2);color:var(--am);border:2px solid var(--am)}
+.fs-ampm.pm{background:rgba(167,139,250,.2);color:var(--pm);border:2px solid var(--pm)}
+body.th-dawn .fs-ampm.am,body.th-paper .fs-ampm.am{background:rgba(146,64,14,.2);color:#7c2d12;border-color:#92400e}
+body.th-dawn .fs-ampm.pm,body.th-paper .fs-ampm.pm{background:rgba(91,33,182,.2);color:#3b0764;border-color:#5b21b6}
+.fs-date{font-size:.95rem;color:#c4d4f0;font-weight:700;margin-bottom:5px}
+body.th-dawn .fs-date,body.th-paper .fs-date{color:var(--text);font-weight:800}
+.fs-tod{font-size:.85rem;font-weight:800;padding:3px 11px;border-radius:5px;display:inline-block;margin-bottom:4px}
+.fs-season{font-size:.82rem;color:var(--muted);font-weight:700;margin-bottom:4px}
+.fs-weather{font-size:.82rem;font-weight:800;color:#60a5fa;margin-bottom:4px;padding:3px 10px;background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.25);border-radius:5px;display:none}
+body.th-dawn .fs-weather,body.th-paper .fs-weather{color:#1d4ed8;background:rgba(29,78,216,.1);border-color:rgba(29,78,216,.25)}
+.fs-diff{font-size:.75rem;color:#94a3b8;font-style:italic;margin-bottom:4px}
+.fs-dst{font-size:.72rem;font-weight:800;margin-bottom:7px}
+.fs-tz{font-family:var(--font-mono);font-size:.8rem;color:#fb923c;margin-bottom:3px}
+.fs-meaning{font-size:.72rem;color:var(--muted);font-family:var(--font-mono)}
+
+/* ── ADMIN + PICKER (compact) ── */
+.adm-overlay,.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:300;align-items:center;justify-content:center}
+.adm-overlay.open,.mo.open{display:flex}
+.adm-box{background:var(--surface);border:2px solid #7c3aed;border-radius:16px;padding:22px;width:min(680px,95vw);max-height:86vh;display:flex;flex-direction:column;gap:10px;overflow-y:auto}
+.adm-box h2{font-size:.85rem;color:#c084fc;text-transform:uppercase;letter-spacing:.1em;font-weight:900}
+.adm-tabs{display:flex;gap:5px;flex-wrap:wrap}
+.adm-tab{background:var(--card);border:1px solid var(--border);color:var(--muted);border-radius:7px;padding:4px 11px;font-size:.68rem;cursor:pointer;font-family:var(--font-ui);font-weight:700}
+.adm-tab.active{background:#7c3aed;color:#fff;border-color:#7c3aed}
+.adm-panel{display:none}.adm-panel.active{display:block}
+.adm-form{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.adm-form label{font-size:.58rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;font-weight:700;display:flex;flex-direction:column;gap:3px}
+.adm-form input,.adm-form select{background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:5px 8px;font-family:var(--font-ui);font-size:.78rem;outline:none}
+.adm-form input:focus,.adm-form select:focus{border-color:#7c3aed}
+.adm-list{display:flex;flex-direction:column;gap:4px;max-height:260px;overflow-y:auto}
+.adm-item{background:var(--card);border:1px solid var(--border);border-radius:7px;padding:7px 10px;display:flex;justify-content:space-between;align-items:center;font-size:.74rem}
+.adm-item .ai-name{font-weight:700;color:var(--text)}.adm-item .ai-tz{font-size:.6rem;color:var(--muted);font-family:var(--font-mono)}
+.adm-del{background:none;border:1px solid #ef4444;color:#ef4444;border-radius:4px;padding:2px 8px;font-size:.6rem;cursor:pointer;font-family:var(--font-ui);font-weight:700}
+.adm-del:hover{background:#ef4444;color:#fff}
+.adm-save{background:#7c3aed;border:none;color:#fff;border-radius:7px;padding:6px 14px;font-size:.74rem;cursor:pointer;font-family:var(--font-ui);font-weight:800}
+.adm-save:hover{background:#6d28d9}
+.adm-close,.mc{align-self:flex-end;background:none;border:1px solid var(--border);color:var(--muted);border-radius:5px;padding:3px 10px;cursor:pointer;font-size:.68rem;font-family:var(--font-ui);font-weight:700}
+.adm-close:hover,.mc:hover{border-color:var(--accent2);color:var(--accent2)}
+.adm-login{display:flex;flex-direction:column;gap:10px;align-items:center;padding:16px 0}
+.adm-login h3{color:#c084fc;font-size:.95rem;font-weight:900}
+.adm-login input{background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:8px 12px;font-family:var(--font-ui);font-size:.86rem;outline:none;width:240px}
+.adm-login input:focus{border-color:#7c3aed}
+.adm-btn{background:#7c3aed;border:none;color:#fff;border-radius:7px;padding:8px 20px;font-size:.78rem;cursor:pointer;font-family:var(--font-ui);font-weight:800}
+.adm-btn:hover{background:#6d28d9}
+.adm-err{color:#f87171;font-size:.7rem;font-weight:700}
+.adm-hint{font-size:.58rem;color:var(--muted);font-weight:600}
+.mb{background:var(--surface);border:1px solid var(--accent);border-radius:15px;padding:18px;width:min(420px,92vw);max-height:78vh;display:flex;flex-direction:column;gap:9px}
+.mb h3{font-size:.72rem;color:var(--accent);text-transform:uppercase;letter-spacing:.1em;font-weight:900}
+.ms{background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:7px 11px;font-size:.84rem;outline:none;font-family:var(--font-ui);width:100%;font-weight:600}
+.ms:focus{border-color:var(--accent)}
+.ml{overflow-y:auto;display:flex;flex-direction:column;gap:2px;flex:1}
+.mi{padding:7px 11px;border-radius:6px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-size:.8rem;transition:background .15s}
+.mi:hover{background:var(--card)}
+.mi .mn{font-weight:700;color:var(--text);display:flex;align-items:center;gap:5px}.mi .mt{font-size:.63rem;color:var(--muted);font-family:var(--font-mono)}
+.nr{color:var(--muted);padding:18px 0;font-size:.86rem;font-weight:700}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* ── RESPONSIVE ── */
+@media(max-width:768px){
+  .font-trigger .font-lbl-text{display:none}
+  .theme-lbl{display:none}
+  .hdr-right{gap:5px}
+  .conv-row{gap:6px}
+  .home-tz-badges{display:none}
+}
+@media(max-width:480px){
+  .logo-main{font-size:.78rem}
+  .home-card{padding:14px 16px}
+  .home-digits{font-size:clamp(1.8rem,8vw,2.4rem)}
+  .ctrl-bar{padding:9px 11px}
+  .ctrl-lbl{min-width:36px;font-size:.54rem}
+  .pill{padding:3px 8px;font-size:.64rem}
+}
+</style>
+</head>
+<body class="th-midnight">
+<header id="main-header">
+  <div class="logo" id="logo-click">
+    <span class="logo-main">🌐 WORLD<span>CLOCK</span></span>
+    <div class="logo-sub">Bangladesh Hub · All Timezones</div>
+  </div>
+  <div class="hdr-clock" id="hdr-clock">
+    <img class="hc-flag" id="hc-flag" src="" alt="" onerror="this.style.display='none'">
+    <span class="hc-city" id="hc-city">Dhaka</span>
+    <span class="hc-time" id="hc-time">--<span class="hc-colon">:</span>--<span class="hc-colon">:</span>--</span>
+    <span class="hc-ap am" id="hc-ap">AM</span>
+    <span class="hc-date" id="hc-date"></span>
+  </div>
+  <div class="hdr-right">
+    <div class="font-wrap" id="font-wrap">
+      <button class="font-trigger" id="font-trigger">
+        <span class="font-lbl-text">Font</span>
+        <span id="font-current">Tech</span>
+        <span class="fa">▾</span>
+      </button>
+      <div class="font-menu" id="font-menu">
+        <button class="fbtn active" data-font="Orbitron" data-name="Tech"><span style="font-size:.6rem">Tech / Digital</span><span class="fp" style="font-family:'Orbitron'">12:09</span></button>
+        <button class="fbtn" data-font="Share Tech Mono" data-name="Mono"><span style="font-size:.6rem">Mono / Hacker</span><span class="fp" style="font-family:'Share Tech Mono'">12:09</span></button>
+        <button class="fbtn" data-font="VT323" data-name="Retro"><span style="font-size:.6rem">Retro / Pixel</span><span class="fp" style="font-family:'VT323';font-size:1.1rem">12:09</span></button>
+        <button class="fbtn" data-font="Nunito" data-name="Round"><span style="font-size:.6rem">Rounded / Soft</span><span class="fp" style="font-family:'Nunito'">12:09</span></button>
+        <button class="fbtn" data-font="Rajdhani" data-name="Slim"><span style="font-size:.6rem">Slim / Bold</span><span class="fp" style="font-family:'Rajdhani'">12:09</span></button>
+        <button class="fbtn" data-font="Exo 2" data-name="Exo"><span style="font-size:.6rem">Exo / Futuristic</span><span class="fp" style="font-family:'Exo 2'">12:09</span></button>
+        <button class="fbtn" data-font="Oxanium" data-name="Sci-Fi"><span style="font-size:.6rem">Oxanium / Sci-Fi</span><span class="fp" style="font-family:'Oxanium'">12:09</span></button>
+        <button class="fbtn" data-font="Chakra Petch" data-name="Chakra"><span style="font-size:.6rem">Chakra / Tech</span><span class="fp" style="font-family:'Chakra Petch'">12:09</span></button>
+        <button class="fbtn" data-font="Space Mono" data-name="Space"><span style="font-size:.6rem">Space / Code</span><span class="fp" style="font-family:'Space Mono'">12:09</span></button>
+        <button class="fbtn" data-font="Oswald" data-name="Bold"><span style="font-size:.6rem">Oswald / Classic</span><span class="fp" style="font-family:'Oswald'">12:09</span></button>
+      </div>
+    </div>
+    <div class="themes">
+      <span class="theme-lbl">Theme</span>
+      <button class="tbtn active" data-t="midnight" title="Midnight"></button>
+      <button class="tbtn" data-t="dusk"   title="Dusk"></button>
+      <button class="tbtn" data-t="forest" title="Forest"></button>
+      <button class="tbtn" data-t="dawn"   title="Dawn"></button>
+      <button class="tbtn" data-t="paper"  title="Paper"></button>
+    </div>
+  </div>
+</header>
+<main>
+<div class="home-card" id="home-card-el">
+  <div class="home-left">
+    <h2 id="home-label">🇧🇩 BANGLADESH — DHAKA (BST) <button class="chg-btn" onclick="openPicker()">✎ Change</button></h2>
+    <div class="home-time-row">
+      <span class="home-digits"><span id="h-hh">--</span><span class="home-colon">:</span><span id="h-mm">--</span><span class="home-ss"><span class="home-colon">:</span><span id="h-ss">--</span></span></span>
+      <span class="home-ampm am" id="hampm">AM</span>
+    </div>
+    <div class="home-date" id="hdate">Loading…</div>
+  </div>
+  <div class="home-tz-badges">
+    <div class="tzb"><div class="tl">UTC / GMT</div><div class="tv" id="butc">--:--:--</div></div>
+    <div class="tzb"><div class="tl">Offset</div><div class="tv" id="boff">GMT+6</div></div>
+    <div class="tzb"><div class="tl">UNIX</div><div class="tv" id="bunix" style="font-size:.64rem">--</div></div>
+  </div>
+</div>
+<div class="mo" id="modal"><div class="mb">
+  <h3>🌍 Change Home City</h3>
+  <input class="ms" id="msearch" placeholder="Search city or country…" type="text" oninput="filterModal(this.value)">
+  <div class="ml" id="mlist"></div>
+  <button class="mc" onclick="closePicker()">✕ Cancel</button>
+</div></div>
+<div class="conv-sec">
+  <h3>⇄ Time Converter</h3>
+  <div class="conv-row">
+    <div class="cg"><label>From City</label><select id="cfrom"></select></div>
+    <div class="cg"><label>Date</label><input type="date" id="cdate"></div>
+    <div class="cg"><label>Time</label><input type="time" id="ctime" step="60"></div>
+    <div class="arr">→</div>
+    <div class="cr"><div class="rl">🇧🇩 Bangladesh</div><div class="rv" id="cbd">--:--</div><div class="rd" id="cbdd"></div></div>
+    <div class="arr" style="color:var(--muted)">·</div>
+    <div class="cg"><label>Also in</label><select id="cto"></select></div>
+    <div class="cr"><div class="rl" id="ctol">—</div><div class="rv" id="ctov">--:--</div><div class="rd" id="ctod"></div></div>
+  </div>
+</div>
+<div class="cal-section">
+  <button class="cal-toggle-btn" id="cal-toggle-btn" onclick="toggleCal()">
+    <span>📅 Calendar <span style="font-size:.6rem;opacity:.6">· click to expand · double-click for fullscreen</span></span>
+    <span id="cal-arrow">▼ Show</span>
+  </button>
+  <div class="cal-body" id="cal-body">
+    <div class="cal-widget" id="cal-widget" ondblclick="openCalFS()">
+      <div class="cal-widget-lbl">📅 <span id="cal-tz-hint">Dhaka Time</span></div>
+      <div class="cal-nav">
+        <button onclick="calPrevYear(event)">«</button><button onclick="calPrevMonth(event)">‹</button>
+        <span class="cal-title" id="cal-title"></span>
+        <button onclick="calNextMonth(event)">›</button><button onclick="calNextYear(event)">»</button>
+      </div>
+      <div class="cal-weekdays" id="cal-wds"></div>
+      <div class="cal-days" id="cal-days"></div>
+      <div class="cal-hint" id="cal-hint"></div>
+    </div>
+  </div>
+</div>
+<div class="ctrl-bar">
+  <div class="ctrl-row">
+    <span class="ctrl-lbl">View</span>
+    <button class="pill p-g" id="bco" onclick="setView('countries')">🌍 All Countries <span id="nco"></span></button>
+    <button class="pill"     id="bci" onclick="setView('cities')">🏙 Major Cities <span id="nci"></span></button>
+    <button class="pill"     id="bt1" onclick="setView('tier1')">🗺 Tier 1 <span id="nt1"></span></button>
+    <button class="pill"     id="bfav" onclick="setView('favourites')">♥ Favourites <span id="nfav"></span></button>
+    <div class="vsep"></div>
+    <button class="pill p-r" onclick="resetAll()">↺ Reset</button>
+  </div>
+  <div class="ctrl-row">
+    <span class="ctrl-lbl">Region</span>
+    <button class="pill p-a" id="rall"  onclick="setReg('all')">All</button>
+    <button class="pill"     id="rAsia" onclick="setReg('Asia')">Asia</button>
+    <button class="pill"     id="rEur"  onclick="setReg('Europe')">Europe</button>
+    <button class="pill"     id="rAme"  onclick="setReg('Americas')">Americas</button>
+    <button class="pill"     id="rAfr"  onclick="setReg('Africa')">Africa</button>
+    <button class="pill"     id="rPac"  onclick="setReg('Pacific')">Pacific</button>
+  </div>
+  <div class="ctrl-row">
+    <span class="ctrl-lbl">Format</span>
+    <button class="pill p-a" id="f12"  onclick="setFmt(12)">12h</button>
+    <button class="pill"     id="f24"  onclick="setFmt(24)">24h</button>
+    <button class="pill p-a" id="futc" onclick="toggleOff()">UTC Details</button>
+    <div class="vsep"></div>
+    <div class="sw"><input class="sb" id="search" placeholder="🔍 Search city, country, timezone…" type="text"><button class="sr" id="sreset" onclick="clearSearch()" title="Clear">✕</button></div>
+  </div>
+</div>
+<div id="pin-sec"><div class="sh">★ Pinned Cities</div><div class="cg-grid" id="pgrid"></div></div>
+<div class="sh" id="main-lbl">All World Clocks</div>
+<div id="mgrid"></div>
+<div class="nr" id="nores" style="display:none">No clocks match.</div>
+<div class="fs-overlay" id="fs-overlay">
+  <div class="fs-card">
+    <button class="fs-exit" onclick="closeFS()">✕ Exit Full Screen</button>
+    <div class="fs-reg" id="fs-reg"></div>
+    <div class="fs-city" id="fs-city"></div>
+    <div class="fs-ctry" id="fs-ctry"></div>
+    <div class="fs-time" id="fs-time"></div>
+    <div class="fs-ampm am" id="fs-ampm">AM</div>
+    <div class="fs-date" id="fs-date"></div>
+    <div class="fs-tod" id="fs-tod"></div>
+    <div class="fs-season" id="fs-season"></div>
+    <div class="fs-weather" id="fs-weather"></div>
+    <div class="fs-diff" id="fs-diff"></div>
+    <div class="fs-dst" id="fs-dst"></div>
+    <div class="fs-tz" id="fs-tz"></div>
+    <div class="fs-meaning" id="fs-meaning"></div>
+  </div>
+</div>
+<div class="cal-fs-overlay" id="cal-fs-overlay">
+  <div class="cal-fs-box">
+    <button class="cal-fs-exit" onclick="closeCalFS()">✕ Exit</button>
+    <div class="cal-widget-lbl" style="font-size:.75rem;margin-bottom:10px">📅 <span id="cal-fs-tz"></span></div>
+    <div class="cal-nav">
+      <button onclick="calPrevYear(event)">« Year</button><button onclick="calPrevMonth(event)">‹ Month</button>
+      <span class="cal-title" id="cal-fs-title"></span>
+      <button onclick="calNextMonth(event)">Month ›</button><button onclick="calNextYear(event)">Year »</button>
+    </div>
+    <div class="cal-weekdays" id="cal-fs-wds" style="margin-top:12px"></div>
+    <div class="cal-days" id="cal-fs-days"></div>
+    <div class="cal-hint" id="cal-fs-hint" style="font-size:.66rem;margin-top:9px"></div>
+  </div>
+</div>
+<div class="adm-overlay" id="adm-overlay">
+  <div class="adm-box">
+    <div class="adm-login" id="adm-login">
+      <h3>🔐 Admin Panel</h3>
+      <p class="adm-hint">Click logo 5× quickly · Default: <b>Admin@2026</b></p>
+      <input type="password" id="adm-pass" placeholder="Enter password" onkeydown="if(event.key==='Enter')doLogin()">
+      <button class="adm-btn" onclick="doLogin()">Login</button>
+      <div class="adm-err" id="adm-err"></div>
+    </div>
+    <div id="adm-panel" style="display:none">
+      <h2>⚙ Admin — Clock Manager</h2>
+      <div class="adm-tabs">
+        <button class="adm-tab active" onclick="admTab('countries')">🌍 Countries</button>
+        <button class="adm-tab" onclick="admTab('cities')">🏙 Cities</button>
+        <button class="adm-tab" onclick="admTab('tier1')">🗺 Tier 1</button>
+        <button class="adm-tab" onclick="admTab('password')">🔑 Password</button>
+      </div>
+      <div class="adm-panel active" id="adm-countries"><div class="adm-form" id="adm-countries-form"></div><button class="adm-save" onclick="admAdd('countries')">+ Add Country</button><div style="margin-top:10px"><div class="sh" style="margin-bottom:4px">Custom Added</div><div class="adm-list" id="adm-countries-list"></div></div></div>
+      <div class="adm-panel" id="adm-cities"><div class="adm-form" id="adm-cities-form"></div><button class="adm-save" onclick="admAdd('cities')">+ Add City</button><div style="margin-top:10px"><div class="sh" style="margin-bottom:4px">Custom Added</div><div class="adm-list" id="adm-cities-list"></div></div></div>
+      <div class="adm-panel" id="adm-tier1"><div class="adm-form" id="adm-tier1-form"></div><button class="adm-save" onclick="admAdd('tier1')">+ Add Division</button><div style="margin-top:10px"><div class="sh" style="margin-bottom:4px">Custom Added</div><div class="adm-list" id="adm-tier1-list"></div></div></div>
+      <div class="adm-panel" id="adm-password"><div style="display:flex;flex-direction:column;gap:7px;max-width:250px"><input type="password" id="adm-old" placeholder="Current password" style="background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:7px 9px;font-family:var(--font-ui);font-size:.78rem;outline:none"><input type="password" id="adm-new" placeholder="New password (min 8 chars)" style="background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:7px 9px;font-family:var(--font-ui);font-size:.78rem;outline:none"><input type="password" id="adm-new2" placeholder="Confirm new password" style="background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:7px 9px;font-family:var(--font-ui);font-size:.78rem;outline:none"><button class="adm-save" onclick="changePass()">Change Password</button><div class="adm-err" id="pass-err"></div></div></div>
+      <button class="adm-close" onclick="closeAdmin()">✕ Close</button>
+    </div>
+  </div>
+</div>
+</main>
+<script>
+
+// ═══ FLAGS — Twemoji CDN (works on ALL browsers including Windows) ═══
+const TW = "https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/2/svg/";
+const RI_A = 0x1F1E6, A_CODE = 65;
+function flagUrl(cc){
+  return TW + [...cc.toUpperCase()].map(c=>(c.charCodeAt(0)-A_CODE+RI_A).toString(16)).join('-') + '.svg';
+}
+function flagImg(cc,sz){
+  const s=sz||18;
+  return `<img src="${flagUrl(cc)}" width="${s}" height="${s}" alt="${cc}" style="vertical-align:middle;border-radius:2px;flex-shrink:0" loading="lazy" onerror="this.style.display='none'">`;
+}
+// UK subdivision flags (tag character sequences on Twemoji)
+const TW_SUB = {
+  england:  TW+"1f3f4-e0067-e0062-e0065-e006e-e0067-e007f.svg",
+  scotland: TW+"1f3f4-e0067-e0062-e0073-e0063-e0074-e007f.svg",
+  wales:    TW+"1f3f4-e0067-e0062-e0077-e006c-e0073-e007f.svg",
+};
+function ukSubFlag(country,sz){
+  const s=sz||18;
+  const key=country.toLowerCase().includes("scotland")?"scotland":country.toLowerCase().includes("wales")?"wales":country.toLowerCase().includes("england")?"england":null;
+  const src=key?TW_SUB[key]:flagUrl("GB");
+  return `<img src="${src}" width="${s}" height="${s}" alt="" style="vertical-align:middle;border-radius:2px;flex-shrink:0" loading="lazy" onerror="this.style.display='none'">`;
+}
+
+// ISO country code map
+const ISO={
+  "Afghanistan":"AF","Albania":"AL","Algeria":"DZ","Andorra":"AD","Angola":"AO",
+  "Antigua & Barbuda":"AG","Argentina":"AR","Armenia":"AM","Australia":"AU","Austria":"AT",
+  "Azerbaijan":"AZ","Bahamas":"BS","Bahrain":"BH","Bangladesh":"BD","Barbados":"BB",
+  "Belarus":"BY","Belgium":"BE","Belize":"BZ","Benin":"BJ","Bhutan":"BT",
+  "Bolivia":"BO","Bosnia & Herzegovina":"BA","Botswana":"BW","Brazil":"BR","Brunei":"BN",
+  "Bulgaria":"BG","Burkina Faso":"BF","Burundi":"BI","Cambodia":"KH","Cameroon":"CM",
+  "Canada":"CA","Cape Verde":"CV","Central African Rep.":"CF","Chad":"TD","Chile":"CL",
+  "China":"CN","Colombia":"CO","Comoros":"KM","Costa Rica":"CR","Croatia":"HR",
+  "Cuba":"CU","Czech Republic":"CZ","DR Congo":"CD","Denmark":"DK","Djibouti":"DJ",
+  "Dominica":"DM","Dominican Republic":"DO","Ecuador":"EC","Egypt":"EG","El Salvador":"SV",
+  "Equatorial Guinea":"GQ","Eritrea":"ER","Estonia":"EE","Eswatini":"SZ","Ethiopia":"ET",
+  "Fiji":"FJ","Finland":"FI","France":"FR","Gabon":"GA","Gambia":"GM",
+  "Georgia":"GE","Germany":"DE","Ghana":"GH","Greece":"GR","Grenada":"GD",
+  "Guatemala":"GT","Guinea":"GN","Guinea-Bissau":"GW","Guyana":"GY","Haiti":"HT",
+  "Honduras":"HN","Hong Kong SAR":"HK","Hungary":"HU","Iceland":"IS","India":"IN",
+  "Indonesia":"ID","Iran":"IR","Iraq":"IQ","Ireland":"IE","Israel":"IL",
+  "Italy":"IT","Ivory Coast":"CI","Jamaica":"JM","Japan":"JP","Jordan":"JO",
+  "Kazakhstan":"KZ","Kenya":"KE","Kiribati":"KI","Kosovo":"XK","Kuwait":"KW",
+  "Kyrgyzstan":"KG","Laos":"LA","Latvia":"LV","Lebanon":"LB","Lesotho":"LS",
+  "Liberia":"LR","Libya":"LY","Liechtenstein":"LI","Lithuania":"LT","Luxembourg":"LU",
+  "Madagascar":"MG","Malawi":"MW","Malaysia":"MY","Maldives":"MV","Mali":"ML",
+  "Malta":"MT","Marshall Islands":"MH","Mauritania":"MR","Mauritius":"MU","Mexico":"MX",
+  "Micronesia":"FM","Moldova":"MD","Monaco":"MC","Mongolia":"MN","Montenegro":"ME",
+  "Morocco":"MA","Mozambique":"MZ","Myanmar":"MM","Namibia":"NA","Nauru":"NR",
+  "Nepal":"NP","Netherlands":"NL","New Zealand":"NZ","Nicaragua":"NI","Niger":"NE",
+  "Nigeria":"NG","North Korea":"KP","North Macedonia":"MK","Norway":"NO","Oman":"OM",
+  "Pakistan":"PK","Palau":"PW","Palestine":"PS","Panama":"PA","Papua New Guinea":"PG",
+  "Paraguay":"PY","Peru":"PE","Philippines":"PH","Poland":"PL","Portugal":"PT",
+  "Qatar":"QA","Republic of Congo":"CG","Romania":"RO","Russia":"RU","Rwanda":"RW",
+  "San Marino":"SM","Sao Tome & Principe":"ST","Saudi Arabia":"SA","Senegal":"SN",
+  "Serbia":"RS","Seychelles":"SC","Sierra Leone":"SL","Singapore":"SG","Slovakia":"SK",
+  "Slovenia":"SI","Solomon Islands":"SB","Somalia":"SO","South Africa":"ZA",
+  "South Korea":"KR","South Sudan":"SS","Spain":"ES","Sri Lanka":"LK",
+  "St Kitts & Nevis":"KN","St Lucia":"LC","St Vincent & Grenadines":"VC",
+  "Sudan":"SD","Suriname":"SR","Sweden":"SE","Switzerland":"CH","Syria":"SY",
+  "Taiwan":"TW","Tajikistan":"TJ","Tanzania":"TZ","Thailand":"TH","Timor-Leste":"TL",
+  "Togo":"TG","Tonga":"TO","Trinidad & Tobago":"TT","Tunisia":"TN","Turkey":"TR",
+  "Turkmenistan":"TM","Tuvalu":"TV","UAE":"AE","Uganda":"UG","Ukraine":"UA",
+  "United Kingdom":"GB","United States":"US","Uruguay":"UY","Uzbekistan":"UZ",
+  "Vanuatu":"VU","Vatican":"VA","Venezuela":"VE","Vietnam":"VN","Yemen":"YE",
+  "Zambia":"ZM","Zimbabwe":"ZW"
+};
+
+function getFlag(country,group,sz){
+  const s=sz||18;
+  if(group==="UK") return ukSubFlag(country,s);
+  const grpMap={USA:"US",CA:"CA",AU:"AU",NZ:"NZ",IE:"IE"};
+  if(grpMap[group]) return flagImg(grpMap[group],s);
+  if(ISO[country]) return flagImg(ISO[country],s);
+  if(country.includes(" · ")){
+    const parent=country.split(" · ").pop();
+    if(ISO[parent]) return flagImg(ISO[parent],s);
+    const parents={US:["United States"],GB:["United Kingdom"],CA:["Canada"],AU:["Australia"],NZ:["New Zealand"],IE:["Ireland"]};
+    for(const[cc,names]of Object.entries(parents)){if(names.some(n=>parent.includes(n)))return flagImg(cc,s);}
+  }
+  for(const[k,v]of Object.entries(ISO)){if(country.includes(k))return flagImg(v,s);}
+  return "";
+}
+
+// ═══ COUNTRIES ═══
+const COUNTRIES=[
+  {city:"Kabul",country:"Afghanistan",region:"Asia",tz:"Asia/Kabul",abbr:"AFT",utcLabel:"UTC+4:30"},
+  {city:"Yerevan",country:"Armenia",region:"Asia",tz:"Asia/Yerevan",abbr:"AMT",utcLabel:"UTC+4"},
+  {city:"Baku",country:"Azerbaijan",region:"Asia",tz:"Asia/Baku",abbr:"AZT",utcLabel:"UTC+4"},
+  {city:"Manama",country:"Bahrain",region:"Asia",tz:"Asia/Bahrain",abbr:"AST",utcLabel:"UTC+3"},
+  {city:"Dhaka",country:"Bangladesh",region:"Asia",tz:"Asia/Dhaka",abbr:"BST",utcLabel:"UTC+6",home:true},
+  {city:"Thimphu",country:"Bhutan",region:"Asia",tz:"Asia/Thimphu",abbr:"BTT",utcLabel:"UTC+6"},
+  {city:"Bandar Seri Begawan",country:"Brunei",region:"Asia",tz:"Asia/Brunei",abbr:"BNT",utcLabel:"UTC+8"},
+  {city:"Phnom Penh",country:"Cambodia",region:"Asia",tz:"Asia/Phnom_Penh",abbr:"ICT",utcLabel:"UTC+7"},
+  {city:"Beijing",country:"China",region:"Asia",tz:"Asia/Shanghai",abbr:"CST",utcLabel:"UTC+8"},
+  {city:"Tbilisi",country:"Georgia",region:"Asia",tz:"Asia/Tbilisi",abbr:"GET",utcLabel:"UTC+4"},
+  {city:"New Delhi",country:"India",region:"Asia",tz:"Asia/Kolkata",abbr:"IST",utcLabel:"UTC+5:30"},
+  {city:"Jakarta",country:"Indonesia",region:"Asia",tz:"Asia/Jakarta",abbr:"WIB",utcLabel:"UTC+7"},
+  {city:"Tehran",country:"Iran",region:"Asia",tz:"Asia/Tehran",abbr:"IRST",utcLabel:"UTC+3:30"},
+  {city:"Baghdad",country:"Iraq",region:"Asia",tz:"Asia/Baghdad",abbr:"AST",utcLabel:"UTC+3"},
+  {city:"Jerusalem",country:"Israel",region:"Asia",tz:"Asia/Jerusalem",abbr:"IST",utcLabel:"UTC+2/+3"},
+  {city:"Tokyo",country:"Japan",region:"Asia",tz:"Asia/Tokyo",abbr:"JST",utcLabel:"UTC+9"},
+  {city:"Amman",country:"Jordan",region:"Asia",tz:"Asia/Amman",abbr:"EET",utcLabel:"UTC+3"},
+  {city:"Astana",country:"Kazakhstan",region:"Asia",tz:"Asia/Almaty",abbr:"ALMT",utcLabel:"UTC+6"},
+  {city:"Kuwait City",country:"Kuwait",region:"Asia",tz:"Asia/Kuwait",abbr:"AST",utcLabel:"UTC+3"},
+  {city:"Bishkek",country:"Kyrgyzstan",region:"Asia",tz:"Asia/Bishkek",abbr:"KGT",utcLabel:"UTC+6"},
+  {city:"Vientiane",country:"Laos",region:"Asia",tz:"Asia/Vientiane",abbr:"ICT",utcLabel:"UTC+7"},
+  {city:"Beirut",country:"Lebanon",region:"Asia",tz:"Asia/Beirut",abbr:"EET",utcLabel:"UTC+2/+3"},
+  {city:"Kuala Lumpur",country:"Malaysia",region:"Asia",tz:"Asia/Kuala_Lumpur",abbr:"MYT",utcLabel:"UTC+8"},
+  {city:"Male",country:"Maldives",region:"Asia",tz:"Indian/Maldives",abbr:"MVT",utcLabel:"UTC+5"},
+  {city:"Ulaanbaatar",country:"Mongolia",region:"Asia",tz:"Asia/Ulaanbaatar",abbr:"ULAT",utcLabel:"UTC+8"},
+  {city:"Naypyidaw",country:"Myanmar",region:"Asia",tz:"Asia/Yangon",abbr:"MMT",utcLabel:"UTC+6:30"},
+  {city:"Kathmandu",country:"Nepal",region:"Asia",tz:"Asia/Kathmandu",abbr:"NPT",utcLabel:"UTC+5:45"},
+  {city:"Pyongyang",country:"North Korea",region:"Asia",tz:"Asia/Pyongyang",abbr:"KST",utcLabel:"UTC+9"},
+  {city:"Muscat",country:"Oman",region:"Asia",tz:"Asia/Muscat",abbr:"GST",utcLabel:"UTC+4"},
+  {city:"Islamabad",country:"Pakistan",region:"Asia",tz:"Asia/Karachi",abbr:"PKT",utcLabel:"UTC+5"},
+  {city:"Ramallah",country:"Palestine",region:"Asia",tz:"Asia/Gaza",abbr:"EET",utcLabel:"UTC+2/+3"},
+  {city:"Manila",country:"Philippines",region:"Asia",tz:"Asia/Manila",abbr:"PHT",utcLabel:"UTC+8"},
+  {city:"Doha",country:"Qatar",region:"Asia",tz:"Asia/Qatar",abbr:"AST",utcLabel:"UTC+3"},
+  {city:"Riyadh",country:"Saudi Arabia",region:"Asia",tz:"Asia/Riyadh",abbr:"AST",utcLabel:"UTC+3"},
+  {city:"Singapore",country:"Singapore",region:"Asia",tz:"Asia/Singapore",abbr:"SGT",utcLabel:"UTC+8"},
+  {city:"Seoul",country:"South Korea",region:"Asia",tz:"Asia/Seoul",abbr:"KST",utcLabel:"UTC+9"},
+  {city:"Colombo",country:"Sri Lanka",region:"Asia",tz:"Asia/Colombo",abbr:"IST",utcLabel:"UTC+5:30"},
+  {city:"Damascus",country:"Syria",region:"Asia",tz:"Asia/Damascus",abbr:"EET",utcLabel:"UTC+3"},
+  {city:"Taipei",country:"Taiwan",region:"Asia",tz:"Asia/Taipei",abbr:"CST",utcLabel:"UTC+8"},
+  {city:"Dushanbe",country:"Tajikistan",region:"Asia",tz:"Asia/Dushanbe",abbr:"TJT",utcLabel:"UTC+5"},
+  {city:"Bangkok",country:"Thailand",region:"Asia",tz:"Asia/Bangkok",abbr:"ICT",utcLabel:"UTC+7"},
+  {city:"Dili",country:"Timor-Leste",region:"Asia",tz:"Asia/Dili",abbr:"TLT",utcLabel:"UTC+9"},
+  {city:"Istanbul",country:"Turkey",region:"Asia",tz:"Europe/Istanbul",abbr:"TRT",utcLabel:"UTC+3"},
+  {city:"Ashgabat",country:"Turkmenistan",region:"Asia",tz:"Asia/Ashgabat",abbr:"TMT",utcLabel:"UTC+5"},
+  {city:"Abu Dhabi",country:"UAE",region:"Asia",tz:"Asia/Dubai",abbr:"GST",utcLabel:"UTC+4"},
+  {city:"Tashkent",country:"Uzbekistan",region:"Asia",tz:"Asia/Tashkent",abbr:"UZT",utcLabel:"UTC+5"},
+  {city:"Hanoi",country:"Vietnam",region:"Asia",tz:"Asia/Ho_Chi_Minh",abbr:"ICT",utcLabel:"UTC+7"},
+  {city:"Sanaa",country:"Yemen",region:"Asia",tz:"Asia/Aden",abbr:"AST",utcLabel:"UTC+3"},
+  {city:"Hong Kong",country:"Hong Kong SAR",region:"Asia",tz:"Asia/Hong_Kong",abbr:"HKT",utcLabel:"UTC+8"},
+  {city:"Tirana",country:"Albania",region:"Europe",tz:"Europe/Tirane",abbr:"CET",utcLabel:"UTC+1/+2"},
+  {city:"Andorra la Vella",country:"Andorra",region:"Europe",tz:"Europe/Andorra",abbr:"CET",utcLabel:"UTC+1/+2"},
+  {city:"Vienna",country:"Austria",region:"Europe",tz:"Europe/Vienna",abbr:"CET",utcLabel:"UTC+1/+2"},
+  {city:"Minsk",country:"Belarus",region:"Europe",tz:"Europe/Minsk",abbr:"FET",utcLabel:"UTC+3"},
+  {city:"Brussels",country:"Belgium",region:"Europe",tz:"Europe/Brussels",abbr:"CET",utcLabel:"UTC+1/+2"},
+  {city:"Sarajevo",country:"Bosnia & Herzegovina",region:"Europe",tz:"Europe/Sarajevo",abbr:"CET",utcLabel:"UTC+1/+2"},
+  {city:"Sofia",country:"Bulgaria",region:"Europe",tz:"Europe/Sofia",abbr:"EET",utcLabel:"UTC+2/+3"},
+  {city:"Zagreb",country:"Croatia",region:"Europe",tz:"Europe/Zagreb",abbr:"CET",utcLabel:"UTC+1/+2"},
+  {city:"Prague",country:"Czech Republic",region:"Europe",tz:"Europe/Prague",abbr:"CET",utcLabel:"UTC+1/+2"},
+  {city:"Copenhagen",country:"Denmark",region:"Europe",tz:"Europe/Copenhagen",abbr:"CET",utcLabel:"UTC+1/+2"},
+  {city:"Tallinn",country:"Estonia",region:"Europe",tz:"Europe/Tallinn",abbr:"EET",utcLabel:"UTC+2/+3"},
+  {city:"Helsinki",country:"Finland",region:"Europe",tz:"Europe/Helsinki",abbr:"EET",utcLabel:"UTC+2/+3"},
+  {city:"Paris",country:"France",region:"Europe",tz:"Europe/Paris",abbr:"CET",utcLabel:"UTC+1/+2"},
+  {city:"Berlin",country:"Germany",region:"Europe",tz:"Europe/Berlin",abbr:"CET",utcLabel:"UTC+1/+2"},
+  {city:"Athens",country:"Greece",region:"Europe",tz:"Europe/Athens",abbr:"EET",utcLabel:"UTC+2/+3"},
+  {city:"Budapest",country:"Hungary",region:"Europe",tz:"Europe/Budapest",abbr:"CET",utcLabel:"UTC+1/+2"},
+  {city:"Reykjavik",country:"Iceland",region:"Europe",tz:"Atlantic/Reykjavik",abbr:"GMT",utcLabel:"UTC+0"},
+  {city:"Dublin",country:"Ireland",region:"Europe",tz:"Europe/Dublin",abbr:"GMT/IST",utcLabel:"UTC+0/+1"},
+  {city:"Rome",country:"Italy",region:"Europe",tz:"Europe/Rome",abbr:"CET",utcLabel:"UTC+1/+2"},
+  {city:"Pristina",country:"Kosovo",region:"Europe",tz:"Europe/Belgrade",abbr:"CET",utcLabel:"UTC+1/+2"},
+  {city:"Riga",country:"Latvia",region:"Europe",tz:"Europe/Riga",abbr:"EET",utcLabel:"UTC+2/+3"},
+  {city:"Vaduz",country:"Liechtenstein",region:"Europe",tz:"Europe/Vaduz",abbr:"CET",utcLabel:"UTC+1/+2"},
+  {city:"Vilnius",country:"Lithuania",region:"Europe",tz:"Europe/Vilnius",abbr:"EET",utcLabel:"UTC+2/+3"},
+  {city:"Luxembourg City",country:"Luxembourg",region:"Europe",tz:"Europe/Luxembourg",abbr:"CET",utcLabel:"UTC+1/+2"},
+  {city:"Valletta",country:"Malta",region:"Europe",tz:"Europe/Malta",abbr:"CET",utcLabel:"UTC+1/+2"},
+  {city:"Chisinau",country:"Moldova",region:"Europe",tz:"Europe/Chisinau",abbr:"EET",utcLabel:"UTC+2/+3"},
+  {city:"Monaco",country:"Monaco",region:"Europe",tz:"Europe/Monaco",abbr:"CET",utcLabel:"UTC+1/+2"},
+  {city:"Podgorica",country:"Montenegro",region:"Europe",tz:"Europe/Podgorica",abbr:"CET",utcLabel:"UTC+1/+2"},
+  {city:"Amsterdam",country:"Netherlands",region:"Europe",tz:"Europe/Amsterdam",abbr:"CET",utcLabel:"UTC+1/+2"},
+  {city:"Skopje",country:"North Macedonia",region:"Europe",tz:"Europe/Skopje",abbr:"CET",utcLabel:"UTC+1/+2"},
+  {city:"Oslo",country:"Norway",region:"Europe",tz:"Europe/Oslo",abbr:"CET",utcLabel:"UTC+1/+2"},
+  {city:"Warsaw",country:"Poland",region:"Europe",tz:"Europe/Warsaw",abbr:"CET",utcLabel:"UTC+1/+2"},
+  {city:"Lisbon",country:"Portugal",region:"Europe",tz:"Europe/Lisbon",abbr:"WET",utcLabel:"UTC+0/+1"},
+  {city:"Bucharest",country:"Romania",region:"Europe",tz:"Europe/Bucharest",abbr:"EET",utcLabel:"UTC+2/+3"},
+  {city:"Moscow",country:"Russia",region:"Europe",tz:"Europe/Moscow",abbr:"MSK",utcLabel:"UTC+3"},
+  {city:"San Marino",country:"San Marino",region:"Europe",tz:"Europe/San_Marino",abbr:"CET",utcLabel:"UTC+1/+2"},
+  {city:"Belgrade",country:"Serbia",region:"Europe",tz:"Europe/Belgrade",abbr:"CET",utcLabel:"UTC+1/+2"},
+  {city:"Bratislava",country:"Slovakia",region:"Europe",tz:"Europe/Bratislava",abbr:"CET",utcLabel:"UTC+1/+2"},
+  {city:"Ljubljana",country:"Slovenia",region:"Europe",tz:"Europe/Ljubljana",abbr:"CET",utcLabel:"UTC+1/+2"},
+  {city:"Madrid",country:"Spain",region:"Europe",tz:"Europe/Madrid",abbr:"CET",utcLabel:"UTC+1/+2"},
+  {city:"Stockholm",country:"Sweden",region:"Europe",tz:"Europe/Stockholm",abbr:"CET",utcLabel:"UTC+1/+2"},
+  {city:"Bern",country:"Switzerland",region:"Europe",tz:"Europe/Zurich",abbr:"CET",utcLabel:"UTC+1/+2"},
+  {city:"Kyiv",country:"Ukraine",region:"Europe",tz:"Europe/Kiev",abbr:"EET",utcLabel:"UTC+2/+3"},
+  {city:"London",country:"United Kingdom",region:"Europe",tz:"Europe/London",abbr:"GMT/BST",utcLabel:"UTC+0/+1"},
+  {city:"Vatican City",country:"Vatican",region:"Europe",tz:"Europe/Vatican",abbr:"CET",utcLabel:"UTC+1/+2"},
+  {city:"Algiers",country:"Algeria",region:"Africa",tz:"Africa/Algiers",abbr:"CET",utcLabel:"UTC+1"},
+  {city:"Luanda",country:"Angola",region:"Africa",tz:"Africa/Luanda",abbr:"WAT",utcLabel:"UTC+1"},
+  {city:"Porto-Novo",country:"Benin",region:"Africa",tz:"Africa/Porto-Novo",abbr:"WAT",utcLabel:"UTC+1"},
+  {city:"Gaborone",country:"Botswana",region:"Africa",tz:"Africa/Gaborone",abbr:"CAT",utcLabel:"UTC+2"},
+  {city:"Ouagadougou",country:"Burkina Faso",region:"Africa",tz:"Africa/Ouagadougou",abbr:"GMT",utcLabel:"UTC+0"},
+  {city:"Bujumbura",country:"Burundi",region:"Africa",tz:"Africa/Bujumbura",abbr:"CAT",utcLabel:"UTC+2"},
+  {city:"Yaounde",country:"Cameroon",region:"Africa",tz:"Africa/Douala",abbr:"WAT",utcLabel:"UTC+1"},
+  {city:"Praia",country:"Cape Verde",region:"Africa",tz:"Atlantic/Cape_Verde",abbr:"CVT",utcLabel:"UTC-1"},
+  {city:"Bangui",country:"Central African Rep.",region:"Africa",tz:"Africa/Bangui",abbr:"WAT",utcLabel:"UTC+1"},
+  {city:"Ndjamena",country:"Chad",region:"Africa",tz:"Africa/Ndjamena",abbr:"WAT",utcLabel:"UTC+1"},
+  {city:"Moroni",country:"Comoros",region:"Africa",tz:"Indian/Comoro",abbr:"EAT",utcLabel:"UTC+3"},
+  {city:"Kinshasa",country:"DR Congo",region:"Africa",tz:"Africa/Kinshasa",abbr:"WAT",utcLabel:"UTC+1"},
+  {city:"Brazzaville",country:"Republic of Congo",region:"Africa",tz:"Africa/Brazzaville",abbr:"WAT",utcLabel:"UTC+1"},
+  {city:"Djibouti",country:"Djibouti",region:"Africa",tz:"Africa/Djibouti",abbr:"EAT",utcLabel:"UTC+3"},
+  {city:"Cairo",country:"Egypt",region:"Africa",tz:"Africa/Cairo",abbr:"EET",utcLabel:"UTC+2"},
+  {city:"Malabo",country:"Equatorial Guinea",region:"Africa",tz:"Africa/Malabo",abbr:"WAT",utcLabel:"UTC+1"},
+  {city:"Asmara",country:"Eritrea",region:"Africa",tz:"Africa/Asmara",abbr:"EAT",utcLabel:"UTC+3"},
+  {city:"Addis Ababa",country:"Ethiopia",region:"Africa",tz:"Africa/Addis_Ababa",abbr:"EAT",utcLabel:"UTC+3"},
+  {city:"Libreville",country:"Gabon",region:"Africa",tz:"Africa/Libreville",abbr:"WAT",utcLabel:"UTC+1"},
+  {city:"Banjul",country:"Gambia",region:"Africa",tz:"Africa/Banjul",abbr:"GMT",utcLabel:"UTC+0"},
+  {city:"Accra",country:"Ghana",region:"Africa",tz:"Africa/Accra",abbr:"GMT",utcLabel:"UTC+0"},
+  {city:"Conakry",country:"Guinea",region:"Africa",tz:"Africa/Conakry",abbr:"GMT",utcLabel:"UTC+0"},
+  {city:"Bissau",country:"Guinea-Bissau",region:"Africa",tz:"Africa/Bissau",abbr:"GMT",utcLabel:"UTC+0"},
+  {city:"Yamoussoukro",country:"Ivory Coast",region:"Africa",tz:"Africa/Abidjan",abbr:"GMT",utcLabel:"UTC+0"},
+  {city:"Nairobi",country:"Kenya",region:"Africa",tz:"Africa/Nairobi",abbr:"EAT",utcLabel:"UTC+3"},
+  {city:"Maseru",country:"Lesotho",region:"Africa",tz:"Africa/Maseru",abbr:"SAST",utcLabel:"UTC+2"},
+  {city:"Monrovia",country:"Liberia",region:"Africa",tz:"Africa/Monrovia",abbr:"GMT",utcLabel:"UTC+0"},
+  {city:"Tripoli",country:"Libya",region:"Africa",tz:"Africa/Tripoli",abbr:"EET",utcLabel:"UTC+2"},
+  {city:"Antananarivo",country:"Madagascar",region:"Africa",tz:"Indian/Antananarivo",abbr:"EAT",utcLabel:"UTC+3"},
+  {city:"Lilongwe",country:"Malawi",region:"Africa",tz:"Africa/Blantyre",abbr:"CAT",utcLabel:"UTC+2"},
+  {city:"Bamako",country:"Mali",region:"Africa",tz:"Africa/Bamako",abbr:"GMT",utcLabel:"UTC+0"},
+  {city:"Nouakchott",country:"Mauritania",region:"Africa",tz:"Africa/Nouakchott",abbr:"GMT",utcLabel:"UTC+0"},
+  {city:"Port Louis",country:"Mauritius",region:"Africa",tz:"Indian/Mauritius",abbr:"MUT",utcLabel:"UTC+4"},
+  {city:"Rabat",country:"Morocco",region:"Africa",tz:"Africa/Casablanca",abbr:"WET",utcLabel:"UTC+1"},
+  {city:"Maputo",country:"Mozambique",region:"Africa",tz:"Africa/Maputo",abbr:"CAT",utcLabel:"UTC+2"},
+  {city:"Windhoek",country:"Namibia",region:"Africa",tz:"Africa/Windhoek",abbr:"CAT",utcLabel:"UTC+2"},
+  {city:"Niamey",country:"Niger",region:"Africa",tz:"Africa/Niamey",abbr:"WAT",utcLabel:"UTC+1"},
+  {city:"Abuja",country:"Nigeria",region:"Africa",tz:"Africa/Lagos",abbr:"WAT",utcLabel:"UTC+1"},
+  {city:"Kigali",country:"Rwanda",region:"Africa",tz:"Africa/Kigali",abbr:"CAT",utcLabel:"UTC+2"},
+  {city:"Sao Tome",country:"Sao Tome & Principe",region:"Africa",tz:"Africa/Sao_Tome",abbr:"GMT",utcLabel:"UTC+0"},
+  {city:"Dakar",country:"Senegal",region:"Africa",tz:"Africa/Dakar",abbr:"GMT",utcLabel:"UTC+0"},
+  {city:"Victoria",country:"Seychelles",region:"Africa",tz:"Indian/Mahe",abbr:"SCT",utcLabel:"UTC+4"},
+  {city:"Freetown",country:"Sierra Leone",region:"Africa",tz:"Africa/Freetown",abbr:"GMT",utcLabel:"UTC+0"},
+  {city:"Mogadishu",country:"Somalia",region:"Africa",tz:"Africa/Mogadishu",abbr:"EAT",utcLabel:"UTC+3"},
+  {city:"Pretoria",country:"South Africa",region:"Africa",tz:"Africa/Johannesburg",abbr:"SAST",utcLabel:"UTC+2"},
+  {city:"Juba",country:"South Sudan",region:"Africa",tz:"Africa/Juba",abbr:"EAT",utcLabel:"UTC+3"},
+  {city:"Khartoum",country:"Sudan",region:"Africa",tz:"Africa/Khartoum",abbr:"EAT",utcLabel:"UTC+3"},
+  {city:"Mbabane",country:"Eswatini",region:"Africa",tz:"Africa/Mbabane",abbr:"SAST",utcLabel:"UTC+2"},
+  {city:"Dar es Salaam",country:"Tanzania",region:"Africa",tz:"Africa/Dar_es_Salaam",abbr:"EAT",utcLabel:"UTC+3"},
+  {city:"Lome",country:"Togo",region:"Africa",tz:"Africa/Lome",abbr:"GMT",utcLabel:"UTC+0"},
+  {city:"Tunis",country:"Tunisia",region:"Africa",tz:"Africa/Tunis",abbr:"CET",utcLabel:"UTC+1"},
+  {city:"Kampala",country:"Uganda",region:"Africa",tz:"Africa/Kampala",abbr:"EAT",utcLabel:"UTC+3"},
+  {city:"Lusaka",country:"Zambia",region:"Africa",tz:"Africa/Lusaka",abbr:"CAT",utcLabel:"UTC+2"},
+  {city:"Harare",country:"Zimbabwe",region:"Africa",tz:"Africa/Harare",abbr:"CAT",utcLabel:"UTC+2"},
+  {city:"St. Johns",country:"Antigua & Barbuda",region:"Americas",tz:"America/Antigua",abbr:"AST",utcLabel:"UTC-4"},
+  {city:"Buenos Aires",country:"Argentina",region:"Americas",tz:"America/Argentina/Buenos_Aires",abbr:"ART",utcLabel:"UTC-3"},
+  {city:"Nassau",country:"Bahamas",region:"Americas",tz:"America/Nassau",abbr:"EST/EDT",utcLabel:"UTC-5/-4"},
+  {city:"Bridgetown",country:"Barbados",region:"Americas",tz:"America/Barbados",abbr:"AST",utcLabel:"UTC-4"},
+  {city:"Belmopan",country:"Belize",region:"Americas",tz:"America/Belize",abbr:"CST",utcLabel:"UTC-6"},
+  {city:"La Paz",country:"Bolivia",region:"Americas",tz:"America/La_Paz",abbr:"BOT",utcLabel:"UTC-4"},
+  {city:"Brasilia",country:"Brazil",region:"Americas",tz:"America/Sao_Paulo",abbr:"BRT",utcLabel:"UTC-3"},
+  {city:"Ottawa",country:"Canada",region:"Americas",tz:"America/Toronto",abbr:"EST/EDT",utcLabel:"UTC-5/-4"},
+  {city:"Santiago",country:"Chile",region:"Americas",tz:"America/Santiago",abbr:"CLT",utcLabel:"UTC-4/-3"},
+  {city:"Bogota",country:"Colombia",region:"Americas",tz:"America/Bogota",abbr:"COT",utcLabel:"UTC-5"},
+  {city:"San Jose",country:"Costa Rica",region:"Americas",tz:"America/Costa_Rica",abbr:"CST",utcLabel:"UTC-6"},
+  {city:"Havana",country:"Cuba",region:"Americas",tz:"America/Havana",abbr:"CST/CDT",utcLabel:"UTC-5/-4"},
+  {city:"Roseau",country:"Dominica",region:"Americas",tz:"America/Dominica",abbr:"AST",utcLabel:"UTC-4"},
+  {city:"Santo Domingo",country:"Dominican Republic",region:"Americas",tz:"America/Santo_Domingo",abbr:"AST",utcLabel:"UTC-4"},
+  {city:"Quito",country:"Ecuador",region:"Americas",tz:"America/Guayaquil",abbr:"ECT",utcLabel:"UTC-5"},
+  {city:"San Salvador",country:"El Salvador",region:"Americas",tz:"America/El_Salvador",abbr:"CST",utcLabel:"UTC-6"},
+  {city:"St. Georges",country:"Grenada",region:"Americas",tz:"America/Grenada",abbr:"AST",utcLabel:"UTC-4"},
+  {city:"Guatemala City",country:"Guatemala",region:"Americas",tz:"America/Guatemala",abbr:"CST",utcLabel:"UTC-6"},
+  {city:"Georgetown",country:"Guyana",region:"Americas",tz:"America/Guyana",abbr:"GYT",utcLabel:"UTC-4"},
+  {city:"Port-au-Prince",country:"Haiti",region:"Americas",tz:"America/Port-au-Prince",abbr:"EST/EDT",utcLabel:"UTC-5/-4"},
+  {city:"Tegucigalpa",country:"Honduras",region:"Americas",tz:"America/Tegucigalpa",abbr:"CST",utcLabel:"UTC-6"},
+  {city:"Kingston",country:"Jamaica",region:"Americas",tz:"America/Jamaica",abbr:"EST",utcLabel:"UTC-5"},
+  {city:"Mexico City",country:"Mexico",region:"Americas",tz:"America/Mexico_City",abbr:"CST/CDT",utcLabel:"UTC-6/-5"},
+  {city:"Managua",country:"Nicaragua",region:"Americas",tz:"America/Managua",abbr:"CST",utcLabel:"UTC-6"},
+  {city:"Panama City",country:"Panama",region:"Americas",tz:"America/Panama",abbr:"EST",utcLabel:"UTC-5"},
+  {city:"Asuncion",country:"Paraguay",region:"Americas",tz:"America/Asuncion",abbr:"PYT",utcLabel:"UTC-4/-3"},
+  {city:"Lima",country:"Peru",region:"Americas",tz:"America/Lima",abbr:"PET",utcLabel:"UTC-5"},
+  {city:"Basseterre",country:"St Kitts & Nevis",region:"Americas",tz:"America/St_Kitts",abbr:"AST",utcLabel:"UTC-4"},
+  {city:"Castries",country:"St Lucia",region:"Americas",tz:"America/St_Lucia",abbr:"AST",utcLabel:"UTC-4"},
+  {city:"Kingstown",country:"St Vincent & Grenadines",region:"Americas",tz:"America/St_Vincent",abbr:"AST",utcLabel:"UTC-4"},
+  {city:"Paramaribo",country:"Suriname",region:"Americas",tz:"America/Paramaribo",abbr:"SRT",utcLabel:"UTC-3"},
+  {city:"Port of Spain",country:"Trinidad & Tobago",region:"Americas",tz:"America/Port_of_Spain",abbr:"AST",utcLabel:"UTC-4"},
+  {city:"Washington DC",country:"United States",region:"Americas",tz:"America/New_York",abbr:"EST/EDT",utcLabel:"UTC-5/-4"},
+  {city:"Montevideo",country:"Uruguay",region:"Americas",tz:"America/Montevideo",abbr:"UYT",utcLabel:"UTC-3"},
+  {city:"Caracas",country:"Venezuela",region:"Americas",tz:"America/Caracas",abbr:"VET",utcLabel:"UTC-4"},
+  {city:"Canberra",country:"Australia",region:"Pacific",tz:"Australia/Sydney",abbr:"AEST/AEDT",utcLabel:"UTC+10/+11"},
+  {city:"Suva",country:"Fiji",region:"Pacific",tz:"Pacific/Fiji",abbr:"FJT",utcLabel:"UTC+12"},
+  {city:"Tarawa",country:"Kiribati",region:"Pacific",tz:"Pacific/Tarawa",abbr:"GILT",utcLabel:"UTC+12"},
+  {city:"Majuro",country:"Marshall Islands",region:"Pacific",tz:"Pacific/Majuro",abbr:"MHT",utcLabel:"UTC+12"},
+  {city:"Palikir",country:"Micronesia",region:"Pacific",tz:"Pacific/Pohnpei",abbr:"PONT",utcLabel:"UTC+11"},
+  {city:"Yaren",country:"Nauru",region:"Pacific",tz:"Pacific/Nauru",abbr:"NRT",utcLabel:"UTC+12"},
+  {city:"Wellington",country:"New Zealand",region:"Pacific",tz:"Pacific/Auckland",abbr:"NZST/NZDT",utcLabel:"UTC+12/+13"},
+  {city:"Ngerulmud",country:"Palau",region:"Pacific",tz:"Pacific/Palau",abbr:"PWT",utcLabel:"UTC+9"},
+  {city:"Port Moresby",country:"Papua New Guinea",region:"Pacific",tz:"Pacific/Port_Moresby",abbr:"PGT",utcLabel:"UTC+10"},
+  {city:"Apia",country:"Samoa",region:"Pacific",tz:"Pacific/Apia",abbr:"WST",utcLabel:"UTC+13"},
+  {city:"Honiara",country:"Solomon Islands",region:"Pacific",tz:"Pacific/Guadalcanal",abbr:"SBT",utcLabel:"UTC+11"},
+  {city:"Nukualofa",country:"Tonga",region:"Pacific",tz:"Pacific/Tongatapu",abbr:"TOT",utcLabel:"UTC+13"},
+  {city:"Funafuti",country:"Tuvalu",region:"Pacific",tz:"Pacific/Funafuti",abbr:"TVT",utcLabel:"UTC+12"},
+  {city:"Port Vila",country:"Vanuatu",region:"Pacific",tz:"Pacific/Efate",abbr:"VUT",utcLabel:"UTC+11"},
+];
+
+const MAJOR_CITIES=[
+  {city:"Dhaka",country:"Bangladesh",region:"Asia",tz:"Asia/Dhaka",abbr:"BST",utcLabel:"UTC+6"},
+  {city:"Chittagong",country:"Bangladesh",region:"Asia",tz:"Asia/Dhaka",abbr:"BST",utcLabel:"UTC+6"},
+  {city:"Kolkata",country:"India",region:"Asia",tz:"Asia/Kolkata",abbr:"IST",utcLabel:"UTC+5:30"},
+  {city:"Mumbai",country:"India",region:"Asia",tz:"Asia/Kolkata",abbr:"IST",utcLabel:"UTC+5:30"},
+  {city:"New Delhi",country:"India",region:"Asia",tz:"Asia/Kolkata",abbr:"IST",utcLabel:"UTC+5:30"},
+  {city:"Chennai",country:"India",region:"Asia",tz:"Asia/Kolkata",abbr:"IST",utcLabel:"UTC+5:30"},
+  {city:"Karachi",country:"Pakistan",region:"Asia",tz:"Asia/Karachi",abbr:"PKT",utcLabel:"UTC+5"},
+  {city:"Colombo",country:"Sri Lanka",region:"Asia",tz:"Asia/Colombo",abbr:"IST",utcLabel:"UTC+5:30"},
+  {city:"Kathmandu",country:"Nepal",region:"Asia",tz:"Asia/Kathmandu",abbr:"NPT",utcLabel:"UTC+5:45"},
+  {city:"Yangon",country:"Myanmar",region:"Asia",tz:"Asia/Yangon",abbr:"MMT",utcLabel:"UTC+6:30"},
+  {city:"Bangkok",country:"Thailand",region:"Asia",tz:"Asia/Bangkok",abbr:"ICT",utcLabel:"UTC+7"},
+  {city:"Ho Chi Minh",country:"Vietnam",region:"Asia",tz:"Asia/Ho_Chi_Minh",abbr:"ICT",utcLabel:"UTC+7"},
+  {city:"Jakarta",country:"Indonesia",region:"Asia",tz:"Asia/Jakarta",abbr:"WIB",utcLabel:"UTC+7"},
+  {city:"Kuala Lumpur",country:"Malaysia",region:"Asia",tz:"Asia/Kuala_Lumpur",abbr:"MYT",utcLabel:"UTC+8"},
+  {city:"Singapore",country:"Singapore",region:"Asia",tz:"Asia/Singapore",abbr:"SGT",utcLabel:"UTC+8"},
+  {city:"Manila",country:"Philippines",region:"Asia",tz:"Asia/Manila",abbr:"PHT",utcLabel:"UTC+8"},
+  {city:"Beijing",country:"China",region:"Asia",tz:"Asia/Shanghai",abbr:"CST",utcLabel:"UTC+8"},
+  {city:"Shanghai",country:"China",region:"Asia",tz:"Asia/Shanghai",abbr:"CST",utcLabel:"UTC+8"},
+  {city:"Hong Kong",country:"China",region:"Asia",tz:"Asia/Hong_Kong",abbr:"HKT",utcLabel:"UTC+8"},
+  {city:"Taipei",country:"Taiwan",region:"Asia",tz:"Asia/Taipei",abbr:"CST",utcLabel:"UTC+8"},
+  {city:"Tokyo",country:"Japan",region:"Asia",tz:"Asia/Tokyo",abbr:"JST",utcLabel:"UTC+9"},
+  {city:"Seoul",country:"South Korea",region:"Asia",tz:"Asia/Seoul",abbr:"KST",utcLabel:"UTC+9"},
+  {city:"Dubai",country:"UAE",region:"Asia",tz:"Asia/Dubai",abbr:"GST",utcLabel:"UTC+4"},
+  {city:"Riyadh",country:"Saudi Arabia",region:"Asia",tz:"Asia/Riyadh",abbr:"AST",utcLabel:"UTC+3"},
+  {city:"Tehran",country:"Iran",region:"Asia",tz:"Asia/Tehran",abbr:"IRST",utcLabel:"UTC+3:30"},
+  {city:"Istanbul",country:"Turkey",region:"Asia",tz:"Europe/Istanbul",abbr:"TRT",utcLabel:"UTC+3"},
+  {city:"Doha",country:"Qatar",region:"Asia",tz:"Asia/Qatar",abbr:"AST",utcLabel:"UTC+3"},
+  {city:"Kuwait City",country:"Kuwait",region:"Asia",tz:"Asia/Kuwait",abbr:"AST",utcLabel:"UTC+3"},
+  {city:"Kabul",country:"Afghanistan",region:"Asia",tz:"Asia/Kabul",abbr:"AFT",utcLabel:"UTC+4:30"},
+  {city:"London",country:"United Kingdom",region:"Europe",tz:"Europe/London",abbr:"GMT/BST",utcLabel:"UTC+0/+1"},
+  {city:"Paris",country:"France",region:"Europe",tz:"Europe/Paris",abbr:"CET",utcLabel:"UTC+1/+2"},
+  {city:"Berlin",country:"Germany",region:"Europe",tz:"Europe/Berlin",abbr:"CET",utcLabel:"UTC+1/+2"},
+  {city:"Amsterdam",country:"Netherlands",region:"Europe",tz:"Europe/Amsterdam",abbr:"CET",utcLabel:"UTC+1/+2"},
+  {city:"Madrid",country:"Spain",region:"Europe",tz:"Europe/Madrid",abbr:"CET",utcLabel:"UTC+1/+2"},
+  {city:"Rome",country:"Italy",region:"Europe",tz:"Europe/Rome",abbr:"CET",utcLabel:"UTC+1/+2"},
+  {city:"Zurich",country:"Switzerland",region:"Europe",tz:"Europe/Zurich",abbr:"CET",utcLabel:"UTC+1/+2"},
+  {city:"Moscow",country:"Russia",region:"Europe",tz:"Europe/Moscow",abbr:"MSK",utcLabel:"UTC+3"},
+  {city:"Stockholm",country:"Sweden",region:"Europe",tz:"Europe/Stockholm",abbr:"CET",utcLabel:"UTC+1/+2"},
+  {city:"Warsaw",country:"Poland",region:"Europe",tz:"Europe/Warsaw",abbr:"CET",utcLabel:"UTC+1/+2"},
+  {city:"Athens",country:"Greece",region:"Europe",tz:"Europe/Athens",abbr:"EET",utcLabel:"UTC+2/+3"},
+  {city:"Kyiv",country:"Ukraine",region:"Europe",tz:"Europe/Kiev",abbr:"EET",utcLabel:"UTC+2/+3"},
+  {city:"New York",country:"United States",region:"Americas",tz:"America/New_York",abbr:"EST/EDT",utcLabel:"UTC-5/-4"},
+  {city:"Miami",country:"United States",region:"Americas",tz:"America/New_York",abbr:"EST/EDT",utcLabel:"UTC-5/-4"},
+  {city:"Chicago",country:"United States",region:"Americas",tz:"America/Chicago",abbr:"CST/CDT",utcLabel:"UTC-6/-5"},
+  {city:"Dallas",country:"United States",region:"Americas",tz:"America/Chicago",abbr:"CST/CDT",utcLabel:"UTC-6/-5"},
+  {city:"Los Angeles",country:"United States",region:"Americas",tz:"America/Los_Angeles",abbr:"PST/PDT",utcLabel:"UTC-8/-7"},
+  {city:"San Francisco",country:"United States",region:"Americas",tz:"America/Los_Angeles",abbr:"PST/PDT",utcLabel:"UTC-8/-7"},
+  {city:"Seattle",country:"United States",region:"Americas",tz:"America/Los_Angeles",abbr:"PST/PDT",utcLabel:"UTC-8/-7"},
+  {city:"Denver",country:"United States",region:"Americas",tz:"America/Denver",abbr:"MST/MDT",utcLabel:"UTC-7/-6"},
+  {city:"Houston",country:"United States",region:"Americas",tz:"America/Chicago",abbr:"CST/CDT",utcLabel:"UTC-6/-5"},
+  {city:"Toronto",country:"Canada",region:"Americas",tz:"America/Toronto",abbr:"EST/EDT",utcLabel:"UTC-5/-4"},
+  {city:"Vancouver",country:"Canada",region:"Americas",tz:"America/Vancouver",abbr:"PST/PDT",utcLabel:"UTC-8/-7"},
+  {city:"Mexico City",country:"Mexico",region:"Americas",tz:"America/Mexico_City",abbr:"CST/CDT",utcLabel:"UTC-6/-5"},
+  {city:"Sao Paulo",country:"Brazil",region:"Americas",tz:"America/Sao_Paulo",abbr:"BRT",utcLabel:"UTC-3"},
+  {city:"Buenos Aires",country:"Argentina",region:"Americas",tz:"America/Argentina/Buenos_Aires",abbr:"ART",utcLabel:"UTC-3"},
+  {city:"Lima",country:"Peru",region:"Americas",tz:"America/Lima",abbr:"PET",utcLabel:"UTC-5"},
+  {city:"Bogota",country:"Colombia",region:"Americas",tz:"America/Bogota",abbr:"COT",utcLabel:"UTC-5"},
+  {city:"Caracas",country:"Venezuela",region:"Americas",tz:"America/Caracas",abbr:"VET",utcLabel:"UTC-4"},
+  {city:"Cairo",country:"Egypt",region:"Africa",tz:"Africa/Cairo",abbr:"EET",utcLabel:"UTC+2"},
+  {city:"Lagos",country:"Nigeria",region:"Africa",tz:"Africa/Lagos",abbr:"WAT",utcLabel:"UTC+1"},
+  {city:"Nairobi",country:"Kenya",region:"Africa",tz:"Africa/Nairobi",abbr:"EAT",utcLabel:"UTC+3"},
+  {city:"Johannesburg",country:"South Africa",region:"Africa",tz:"Africa/Johannesburg",abbr:"SAST",utcLabel:"UTC+2"},
+  {city:"Accra",country:"Ghana",region:"Africa",tz:"Africa/Accra",abbr:"GMT",utcLabel:"UTC+0"},
+  {city:"Addis Ababa",country:"Ethiopia",region:"Africa",tz:"Africa/Addis_Ababa",abbr:"EAT",utcLabel:"UTC+3"},
+  {city:"Casablanca",country:"Morocco",region:"Africa",tz:"Africa/Casablanca",abbr:"WET",utcLabel:"UTC+1"},
+  {city:"Sydney",country:"Australia",region:"Pacific",tz:"Australia/Sydney",abbr:"AEST/AEDT",utcLabel:"UTC+10/+11"},
+  {city:"Melbourne",country:"Australia",region:"Pacific",tz:"Australia/Melbourne",abbr:"AEST/AEDT",utcLabel:"UTC+10/+11"},
+  {city:"Brisbane",country:"Australia",region:"Pacific",tz:"Australia/Brisbane",abbr:"AEST",utcLabel:"UTC+10"},
+  {city:"Perth",country:"Australia",region:"Pacific",tz:"Australia/Perth",abbr:"AWST",utcLabel:"UTC+8"},
+  {city:"Auckland",country:"New Zealand",region:"Pacific",tz:"Pacific/Auckland",abbr:"NZST/NZDT",utcLabel:"UTC+12/+13"},
+  {city:"Honolulu",country:"United States",region:"Pacific",tz:"Pacific/Honolulu",abbr:"HST",utcLabel:"UTC-10"},
+  {city:"Anchorage",country:"United States",region:"Americas",tz:"America/Anchorage",abbr:"AKST/AKDT",utcLabel:"UTC-9/-8"},
+  {city:"Novosibirsk",country:"Russia",region:"Asia",tz:"Asia/Novosibirsk",abbr:"NOVT",utcLabel:"UTC+7"},
+  {city:"Vladivostok",country:"Russia",region:"Asia",tz:"Asia/Vladivostok",abbr:"VLAT",utcLabel:"UTC+10"},
+];
+const TIER1=[
+  {city:"Montgomery",country:"Alabama · United States",group:"USA",region:"Americas",tz:"America/Chicago",abbr:"CST/CDT",utcLabel:"UTC-6/-5"},
+  {city:"Juneau",country:"Alaska · United States",group:"USA",region:"Americas",tz:"America/Anchorage",abbr:"AKST/AKDT",utcLabel:"UTC-9/-8"},
+  {city:"Phoenix",country:"Arizona · United States",group:"USA",region:"Americas",tz:"America/Phoenix",abbr:"MST",utcLabel:"UTC-7"},
+  {city:"Little Rock",country:"Arkansas · United States",group:"USA",region:"Americas",tz:"America/Chicago",abbr:"CST/CDT",utcLabel:"UTC-6/-5"},
+  {city:"Sacramento",country:"California · United States",group:"USA",region:"Americas",tz:"America/Los_Angeles",abbr:"PST/PDT",utcLabel:"UTC-8/-7"},
+  {city:"Denver",country:"Colorado · United States",group:"USA",region:"Americas",tz:"America/Denver",abbr:"MST/MDT",utcLabel:"UTC-7/-6"},
+  {city:"Hartford",country:"Connecticut · United States",group:"USA",region:"Americas",tz:"America/New_York",abbr:"EST/EDT",utcLabel:"UTC-5/-4"},
+  {city:"Dover",country:"Delaware · United States",group:"USA",region:"Americas",tz:"America/New_York",abbr:"EST/EDT",utcLabel:"UTC-5/-4"},
+  {city:"Tallahassee",country:"Florida · United States",group:"USA",region:"Americas",tz:"America/New_York",abbr:"EST/EDT",utcLabel:"UTC-5/-4"},
+  {city:"Atlanta",country:"Georgia · United States",group:"USA",region:"Americas",tz:"America/New_York",abbr:"EST/EDT",utcLabel:"UTC-5/-4"},
+  {city:"Honolulu",country:"Hawaii · United States",group:"USA",region:"Pacific",tz:"Pacific/Honolulu",abbr:"HST",utcLabel:"UTC-10"},
+  {city:"Boise",country:"Idaho · United States",group:"USA",region:"Americas",tz:"America/Boise",abbr:"MST/MDT",utcLabel:"UTC-7/-6"},
+  {city:"Springfield",country:"Illinois · United States",group:"USA",region:"Americas",tz:"America/Chicago",abbr:"CST/CDT",utcLabel:"UTC-6/-5"},
+  {city:"Indianapolis",country:"Indiana · United States",group:"USA",region:"Americas",tz:"America/Indiana/Indianapolis",abbr:"EST/EDT",utcLabel:"UTC-5/-4"},
+  {city:"Des Moines",country:"Iowa · United States",group:"USA",region:"Americas",tz:"America/Chicago",abbr:"CST/CDT",utcLabel:"UTC-6/-5"},
+  {city:"Topeka",country:"Kansas · United States",group:"USA",region:"Americas",tz:"America/Chicago",abbr:"CST/CDT",utcLabel:"UTC-6/-5"},
+  {city:"Frankfort",country:"Kentucky · United States",group:"USA",region:"Americas",tz:"America/New_York",abbr:"EST/EDT",utcLabel:"UTC-5/-4"},
+  {city:"Baton Rouge",country:"Louisiana · United States",group:"USA",region:"Americas",tz:"America/Chicago",abbr:"CST/CDT",utcLabel:"UTC-6/-5"},
+  {city:"Augusta",country:"Maine · United States",group:"USA",region:"Americas",tz:"America/New_York",abbr:"EST/EDT",utcLabel:"UTC-5/-4"},
+  {city:"Annapolis",country:"Maryland · United States",group:"USA",region:"Americas",tz:"America/New_York",abbr:"EST/EDT",utcLabel:"UTC-5/-4"},
+  {city:"Boston",country:"Massachusetts · United States",group:"USA",region:"Americas",tz:"America/New_York",abbr:"EST/EDT",utcLabel:"UTC-5/-4"},
+  {city:"Lansing",country:"Michigan · United States",group:"USA",region:"Americas",tz:"America/Detroit",abbr:"EST/EDT",utcLabel:"UTC-5/-4"},
+  {city:"St. Paul",country:"Minnesota · United States",group:"USA",region:"Americas",tz:"America/Chicago",abbr:"CST/CDT",utcLabel:"UTC-6/-5"},
+  {city:"Jackson",country:"Mississippi · United States",group:"USA",region:"Americas",tz:"America/Chicago",abbr:"CST/CDT",utcLabel:"UTC-6/-5"},
+  {city:"Jefferson City",country:"Missouri · United States",group:"USA",region:"Americas",tz:"America/Chicago",abbr:"CST/CDT",utcLabel:"UTC-6/-5"},
+  {city:"Helena",country:"Montana · United States",group:"USA",region:"Americas",tz:"America/Denver",abbr:"MST/MDT",utcLabel:"UTC-7/-6"},
+  {city:"Lincoln",country:"Nebraska · United States",group:"USA",region:"Americas",tz:"America/Chicago",abbr:"CST/CDT",utcLabel:"UTC-6/-5"},
+  {city:"Carson City",country:"Nevada · United States",group:"USA",region:"Americas",tz:"America/Los_Angeles",abbr:"PST/PDT",utcLabel:"UTC-8/-7"},
+  {city:"Concord",country:"New Hampshire · United States",group:"USA",region:"Americas",tz:"America/New_York",abbr:"EST/EDT",utcLabel:"UTC-5/-4"},
+  {city:"Trenton",country:"New Jersey · United States",group:"USA",region:"Americas",tz:"America/New_York",abbr:"EST/EDT",utcLabel:"UTC-5/-4"},
+  {city:"Santa Fe",country:"New Mexico · United States",group:"USA",region:"Americas",tz:"America/Denver",abbr:"MST/MDT",utcLabel:"UTC-7/-6"},
+  {city:"Albany",country:"New York · United States",group:"USA",region:"Americas",tz:"America/New_York",abbr:"EST/EDT",utcLabel:"UTC-5/-4"},
+  {city:"Raleigh",country:"North Carolina · United States",group:"USA",region:"Americas",tz:"America/New_York",abbr:"EST/EDT",utcLabel:"UTC-5/-4"},
+  {city:"Bismarck",country:"North Dakota · United States",group:"USA",region:"Americas",tz:"America/Chicago",abbr:"CST/CDT",utcLabel:"UTC-6/-5"},
+  {city:"Columbus",country:"Ohio · United States",group:"USA",region:"Americas",tz:"America/New_York",abbr:"EST/EDT",utcLabel:"UTC-5/-4"},
+  {city:"Oklahoma City",country:"Oklahoma · United States",group:"USA",region:"Americas",tz:"America/Chicago",abbr:"CST/CDT",utcLabel:"UTC-6/-5"},
+  {city:"Salem",country:"Oregon · United States",group:"USA",region:"Americas",tz:"America/Los_Angeles",abbr:"PST/PDT",utcLabel:"UTC-8/-7"},
+  {city:"Harrisburg",country:"Pennsylvania · United States",group:"USA",region:"Americas",tz:"America/New_York",abbr:"EST/EDT",utcLabel:"UTC-5/-4"},
+  {city:"Providence",country:"Rhode Island · United States",group:"USA",region:"Americas",tz:"America/New_York",abbr:"EST/EDT",utcLabel:"UTC-5/-4"},
+  {city:"Columbia",country:"South Carolina · United States",group:"USA",region:"Americas",tz:"America/New_York",abbr:"EST/EDT",utcLabel:"UTC-5/-4"},
+  {city:"Pierre",country:"South Dakota · United States",group:"USA",region:"Americas",tz:"America/Chicago",abbr:"CST/CDT",utcLabel:"UTC-6/-5"},
+  {city:"Nashville",country:"Tennessee · United States",group:"USA",region:"Americas",tz:"America/Chicago",abbr:"CST/CDT",utcLabel:"UTC-6/-5"},
+  {city:"Austin",country:"Texas · United States",group:"USA",region:"Americas",tz:"America/Chicago",abbr:"CST/CDT",utcLabel:"UTC-6/-5"},
+  {city:"Salt Lake City",country:"Utah · United States",group:"USA",region:"Americas",tz:"America/Denver",abbr:"MST/MDT",utcLabel:"UTC-7/-6"},
+  {city:"Montpelier",country:"Vermont · United States",group:"USA",region:"Americas",tz:"America/New_York",abbr:"EST/EDT",utcLabel:"UTC-5/-4"},
+  {city:"Richmond",country:"Virginia · United States",group:"USA",region:"Americas",tz:"America/New_York",abbr:"EST/EDT",utcLabel:"UTC-5/-4"},
+  {city:"Olympia",country:"Washington · United States",group:"USA",region:"Americas",tz:"America/Los_Angeles",abbr:"PST/PDT",utcLabel:"UTC-8/-7"},
+  {city:"Charleston",country:"West Virginia · United States",group:"USA",region:"Americas",tz:"America/New_York",abbr:"EST/EDT",utcLabel:"UTC-5/-4"},
+  {city:"Madison",country:"Wisconsin · United States",group:"USA",region:"Americas",tz:"America/Chicago",abbr:"CST/CDT",utcLabel:"UTC-6/-5"},
+  {city:"Cheyenne",country:"Wyoming · United States",group:"USA",region:"Americas",tz:"America/Denver",abbr:"MST/MDT",utcLabel:"UTC-7/-6"},
+  {city:"London",country:"England · United Kingdom",group:"UK",region:"Europe",tz:"Europe/London",abbr:"GMT/BST",utcLabel:"UTC+0/+1"},
+  {city:"Edinburgh",country:"Scotland · United Kingdom",group:"UK",region:"Europe",tz:"Europe/London",abbr:"GMT/BST",utcLabel:"UTC+0/+1"},
+  {city:"Cardiff",country:"Wales · United Kingdom",group:"UK",region:"Europe",tz:"Europe/London",abbr:"GMT/BST",utcLabel:"UTC+0/+1"},
+  {city:"Belfast",country:"Northern Ireland · United Kingdom",group:"UK",region:"Europe",tz:"Europe/London",abbr:"GMT/BST",utcLabel:"UTC+0/+1"},
+  {city:"Victoria",country:"British Columbia · Canada",group:"CA",region:"Americas",tz:"America/Vancouver",abbr:"PST/PDT",utcLabel:"UTC-8/-7"},
+  {city:"Edmonton",country:"Alberta · Canada",group:"CA",region:"Americas",tz:"America/Edmonton",abbr:"MST/MDT",utcLabel:"UTC-7/-6"},
+  {city:"Regina",country:"Saskatchewan · Canada",group:"CA",region:"Americas",tz:"America/Regina",abbr:"CST",utcLabel:"UTC-6"},
+  {city:"Winnipeg",country:"Manitoba · Canada",group:"CA",region:"Americas",tz:"America/Winnipeg",abbr:"CST/CDT",utcLabel:"UTC-6/-5"},
+  {city:"Toronto",country:"Ontario · Canada",group:"CA",region:"Americas",tz:"America/Toronto",abbr:"EST/EDT",utcLabel:"UTC-5/-4"},
+  {city:"Quebec City",country:"Quebec · Canada",group:"CA",region:"Americas",tz:"America/Toronto",abbr:"EST/EDT",utcLabel:"UTC-5/-4"},
+  {city:"Fredericton",country:"New Brunswick · Canada",group:"CA",region:"Americas",tz:"America/Moncton",abbr:"AST/ADT",utcLabel:"UTC-4/-3"},
+  {city:"Halifax",country:"Nova Scotia · Canada",group:"CA",region:"Americas",tz:"America/Halifax",abbr:"AST/ADT",utcLabel:"UTC-4/-3"},
+  {city:"Charlottetown",country:"Prince Edward Island · Canada",group:"CA",region:"Americas",tz:"America/Halifax",abbr:"AST/ADT",utcLabel:"UTC-4/-3"},
+  {city:"St. Johns",country:"Newfoundland · Canada",group:"CA",region:"Americas",tz:"America/St_Johns",abbr:"NST/NDT",utcLabel:"UTC-3:30/-2:30"},
+  {city:"Whitehorse",country:"Yukon · Canada",group:"CA",region:"Americas",tz:"America/Whitehorse",abbr:"MST",utcLabel:"UTC-7"},
+  {city:"Yellowknife",country:"Northwest Territories · Canada",group:"CA",region:"Americas",tz:"America/Yellowknife",abbr:"MST/MDT",utcLabel:"UTC-7/-6"},
+  {city:"Iqaluit",country:"Nunavut · Canada",group:"CA",region:"Americas",tz:"America/Iqaluit",abbr:"EST/EDT",utcLabel:"UTC-5/-4"},
+  {city:"Sydney",country:"New South Wales · Australia",group:"AU",region:"Pacific",tz:"Australia/Sydney",abbr:"AEST/AEDT",utcLabel:"UTC+10/+11"},
+  {city:"Melbourne",country:"Victoria · Australia",group:"AU",region:"Pacific",tz:"Australia/Melbourne",abbr:"AEST/AEDT",utcLabel:"UTC+10/+11"},
+  {city:"Brisbane",country:"Queensland · Australia",group:"AU",region:"Pacific",tz:"Australia/Brisbane",abbr:"AEST",utcLabel:"UTC+10"},
+  {city:"Adelaide",country:"South Australia · Australia",group:"AU",region:"Pacific",tz:"Australia/Adelaide",abbr:"ACST/ACDT",utcLabel:"UTC+9:30/+10:30"},
+  {city:"Perth",country:"Western Australia · Australia",group:"AU",region:"Pacific",tz:"Australia/Perth",abbr:"AWST",utcLabel:"UTC+8"},
+  {city:"Darwin",country:"Northern Territory · Australia",group:"AU",region:"Pacific",tz:"Australia/Darwin",abbr:"ACST",utcLabel:"UTC+9:30"},
+  {city:"Hobart",country:"Tasmania · Australia",group:"AU",region:"Pacific",tz:"Australia/Hobart",abbr:"AEST/AEDT",utcLabel:"UTC+10/+11"},
+  {city:"Canberra",country:"ACT · Australia",group:"AU",region:"Pacific",tz:"Australia/ACT",abbr:"AEST/AEDT",utcLabel:"UTC+10/+11"},
+  {city:"Auckland",country:"Auckland Region · New Zealand",group:"NZ",region:"Pacific",tz:"Pacific/Auckland",abbr:"NZST/NZDT",utcLabel:"UTC+12/+13"},
+  {city:"Wellington",country:"Wellington Region · New Zealand",group:"NZ",region:"Pacific",tz:"Pacific/Auckland",abbr:"NZST/NZDT",utcLabel:"UTC+12/+13"},
+  {city:"Christchurch",country:"Canterbury · New Zealand",group:"NZ",region:"Pacific",tz:"Pacific/Auckland",abbr:"NZST/NZDT",utcLabel:"UTC+12/+13"},
+  {city:"Hamilton",country:"Waikato · New Zealand",group:"NZ",region:"Pacific",tz:"Pacific/Auckland",abbr:"NZST/NZDT",utcLabel:"UTC+12/+13"},
+  {city:"Tauranga",country:"Bay of Plenty · New Zealand",group:"NZ",region:"Pacific",tz:"Pacific/Auckland",abbr:"NZST/NZDT",utcLabel:"UTC+12/+13"},
+  {city:"Napier",country:"Hawkes Bay · New Zealand",group:"NZ",region:"Pacific",tz:"Pacific/Auckland",abbr:"NZST/NZDT",utcLabel:"UTC+12/+13"},
+  {city:"Dunedin",country:"Otago · New Zealand",group:"NZ",region:"Pacific",tz:"Pacific/Auckland",abbr:"NZST/NZDT",utcLabel:"UTC+12/+13"},
+  {city:"Invercargill",country:"Southland · New Zealand",group:"NZ",region:"Pacific",tz:"Pacific/Auckland",abbr:"NZST/NZDT",utcLabel:"UTC+12/+13"},
+  {city:"Palmerston North",country:"Manawatu-Whanganui · New Zealand",group:"NZ",region:"Pacific",tz:"Pacific/Auckland",abbr:"NZST/NZDT",utcLabel:"UTC+12/+13"},
+  {city:"Nelson",country:"Nelson Region · New Zealand",group:"NZ",region:"Pacific",tz:"Pacific/Auckland",abbr:"NZST/NZDT",utcLabel:"UTC+12/+13"},
+  {city:"Whangarei",country:"Northland · New Zealand",group:"NZ",region:"Pacific",tz:"Pacific/Auckland",abbr:"NZST/NZDT",utcLabel:"UTC+12/+13"},
+  {city:"Rotorua",country:"Rotorua Lakes · New Zealand",group:"NZ",region:"Pacific",tz:"Pacific/Auckland",abbr:"NZST/NZDT",utcLabel:"UTC+12/+13"},
+  {city:"Gisborne",country:"Gisborne Region · New Zealand",group:"NZ",region:"Pacific",tz:"Pacific/Auckland",abbr:"NZST/NZDT",utcLabel:"UTC+12/+13"},
+  {city:"New Plymouth",country:"Taranaki · New Zealand",group:"NZ",region:"Pacific",tz:"Pacific/Auckland",abbr:"NZST/NZDT",utcLabel:"UTC+12/+13"},
+  {city:"Westport",country:"West Coast · New Zealand",group:"NZ",region:"Pacific",tz:"Pacific/Auckland",abbr:"NZST/NZDT",utcLabel:"UTC+12/+13"},
+  {city:"Blenheim",country:"Marlborough · New Zealand",group:"NZ",region:"Pacific",tz:"Pacific/Auckland",abbr:"NZST/NZDT",utcLabel:"UTC+12/+13"},
+  {city:"Dublin",country:"Dublin County · Ireland",group:"IE",region:"Europe",tz:"Europe/Dublin",abbr:"GMT/IST",utcLabel:"UTC+0/+1"},
+  {city:"Cork",country:"Cork County · Ireland",group:"IE",region:"Europe",tz:"Europe/Dublin",abbr:"GMT/IST",utcLabel:"UTC+0/+1"},
+  {city:"Galway",country:"Galway County · Ireland",group:"IE",region:"Europe",tz:"Europe/Dublin",abbr:"GMT/IST",utcLabel:"UTC+0/+1"},
+  {city:"Limerick",country:"Limerick County · Ireland",group:"IE",region:"Europe",tz:"Europe/Dublin",abbr:"GMT/IST",utcLabel:"UTC+0/+1"},
+  {city:"Waterford",country:"Waterford County · Ireland",group:"IE",region:"Europe",tz:"Europe/Dublin",abbr:"GMT/IST",utcLabel:"UTC+0/+1"},
+  {city:"Kilkenny",country:"Kilkenny County · Ireland",group:"IE",region:"Europe",tz:"Europe/Dublin",abbr:"GMT/IST",utcLabel:"UTC+0/+1"},
+  {city:"Wexford",country:"Wexford County · Ireland",group:"IE",region:"Europe",tz:"Europe/Dublin",abbr:"GMT/IST",utcLabel:"UTC+0/+1"},
+  {city:"Wicklow",country:"Wicklow County · Ireland",group:"IE",region:"Europe",tz:"Europe/Dublin",abbr:"GMT/IST",utcLabel:"UTC+0/+1"},
+  {city:"Carlow",country:"Carlow County · Ireland",group:"IE",region:"Europe",tz:"Europe/Dublin",abbr:"GMT/IST",utcLabel:"UTC+0/+1"},
+  {city:"Laois",country:"Laois County · Ireland",group:"IE",region:"Europe",tz:"Europe/Dublin",abbr:"GMT/IST",utcLabel:"UTC+0/+1"},
+  {city:"Offaly",country:"Offaly County · Ireland",group:"IE",region:"Europe",tz:"Europe/Dublin",abbr:"GMT/IST",utcLabel:"UTC+0/+1"},
+  {city:"Westmeath",country:"Westmeath County · Ireland",group:"IE",region:"Europe",tz:"Europe/Dublin",abbr:"GMT/IST",utcLabel:"UTC+0/+1"},
+  {city:"Longford",country:"Longford County · Ireland",group:"IE",region:"Europe",tz:"Europe/Dublin",abbr:"GMT/IST",utcLabel:"UTC+0/+1"},
+  {city:"Louth",country:"Louth County · Ireland",group:"IE",region:"Europe",tz:"Europe/Dublin",abbr:"GMT/IST",utcLabel:"UTC+0/+1"},
+  {city:"Meath",country:"Meath County · Ireland",group:"IE",region:"Europe",tz:"Europe/Dublin",abbr:"GMT/IST",utcLabel:"UTC+0/+1"},
+  {city:"Kildare",country:"Kildare County · Ireland",group:"IE",region:"Europe",tz:"Europe/Dublin",abbr:"GMT/IST",utcLabel:"UTC+0/+1"},
+  {city:"Tipperary",country:"Tipperary County · Ireland",group:"IE",region:"Europe",tz:"Europe/Dublin",abbr:"GMT/IST",utcLabel:"UTC+0/+1"},
+  {city:"Clare",country:"Clare County · Ireland",group:"IE",region:"Europe",tz:"Europe/Dublin",abbr:"GMT/IST",utcLabel:"UTC+0/+1"},
+  {city:"Kerry",country:"Kerry County · Ireland",group:"IE",region:"Europe",tz:"Europe/Dublin",abbr:"GMT/IST",utcLabel:"UTC+0/+1"},
+  {city:"Mayo",country:"Mayo County · Ireland",group:"IE",region:"Europe",tz:"Europe/Dublin",abbr:"GMT/IST",utcLabel:"UTC+0/+1"},
+  {city:"Sligo",country:"Sligo County · Ireland",group:"IE",region:"Europe",tz:"Europe/Dublin",abbr:"GMT/IST",utcLabel:"UTC+0/+1"},
+  {city:"Roscommon",country:"Roscommon County · Ireland",group:"IE",region:"Europe",tz:"Europe/Dublin",abbr:"GMT/IST",utcLabel:"UTC+0/+1"},
+  {city:"Leitrim",country:"Leitrim County · Ireland",group:"IE",region:"Europe",tz:"Europe/Dublin",abbr:"GMT/IST",utcLabel:"UTC+0/+1"},
+  {city:"Cavan",country:"Cavan County · Ireland",group:"IE",region:"Europe",tz:"Europe/Dublin",abbr:"GMT/IST",utcLabel:"UTC+0/+1"},
+  {city:"Monaghan",country:"Monaghan County · Ireland",group:"IE",region:"Europe",tz:"Europe/Dublin",abbr:"GMT/IST",utcLabel:"UTC+0/+1"},
+  {city:"Donegal",country:"Donegal County · Ireland",group:"IE",region:"Europe",tz:"Europe/Dublin",abbr:"GMT/IST",utcLabel:"UTC+0/+1"},
+];
+const ALL_PICKER=[...COUNTRIES,...MAJOR_CITIES];
+
+// ═══ STATE ═══
+let viewMode="countries",hourFmt=12,regionFilter="all",searchQ="";
+let pinned=[],favs=[],showOffsets=true,dragSrcKey=null;
+let homeTZ="Asia/Dhaka",homeCity="Dhaka",homeCountry="Bangladesh",homeAbbr="BST";
+let fsCity=null,fsTimer=null,calOpen=false,calYear,calMonth;
+const ORDER_KEY="wc_ord_",CUSTOM_KEY="wc_cust_",ADMIN_KEY="wc_adm_h",ADMIN_SALT="wcS_2026";
+try{pinned=JSON.parse(localStorage.getItem("wc_pinned")||"[]");}catch(e){}
+try{favs=JSON.parse(localStorage.getItem("wc_favs")||"[]");}catch(e){}
+
+// ═══ WEATHER SYSTEM (Open-Meteo, free, no key needed) ═══
+const wxCache=new Map(),geoCache=new Map(),WX_TTL=30*60*1000;
+async function fetchWeather(c){
+  const key=c.city+"|"+c.tz;
+  const cached=wxCache.get(key);
+  if(cached&&Date.now()-cached.ts<WX_TTL){applyWeatherToCard(key,cached.data);return;}
+  try{
+    // Geocoding
+    const gk=c.city+","+c.country;
+    let geo=geoCache.get(gk);
+    if(!geo){
+      const gr=await fetch("https://geocoding-api.open-meteo.com/v1/search?name="+encodeURIComponent(c.city)+"&count=5&language=en&format=json");
+      const gd=await gr.json();
+      if(!gd.results||!gd.results.length)return;
+      let best=gd.results[0];
+      const cn=c.country.toLowerCase().split(" · ").pop().replace(" united states","").replace(" united kingdom","").replace(" canada","").replace(" australia","").replace(" new zealand","").replace(" ireland","").trim();
+      for(const r of gd.results){if(r.country&&(r.country.toLowerCase().includes(cn)||cn.includes(r.country.toLowerCase().substring(0,4)))){best=r;break;}}
+      geo={lat:best.latitude,lon:best.longitude};
+      geoCache.set(gk,geo);
+    }
+    // Weather
+    const wr=await fetch("https://api.open-meteo.com/v1/forecast?latitude="+geo.lat+"&longitude="+geo.lon+"&current=weathercode,temperature_2m,windspeed_10m,relativehumidity_2m&timezone="+encodeURIComponent(c.tz)+"&wind_speed_unit=kmh");
+    const wd=await wr.json();
+    if(!wd.current)return;
+    const{weathercode:wc,temperature_2m:temp,windspeed_10m:wind,relativehumidity_2m:hum}=wd.current;
+    const wx=wmoToWeather(wc,wind,temp,hum);
+    const data={...wx,temp:Math.round(temp),wind:Math.round(wind)};
+    wxCache.set(key,{data,ts:Date.now()});
+    applyWeatherToCard(key,data);
+    // also update fullscreen if open
+    if(fsCity&&fsCity.city===c.city&&fsCity.tz===c.tz)updateFSWeather(data);
+  }catch(e){}
+}
+function wmoToWeather(code,wind,temp,hum){
+  // Extreme conditions first
+  if(temp>42)return{icon:"🌡️",term:"Heatwave"};
+  if(temp<-20)return{icon:"🌨️",term:"Blizzard"};
+  // WMO code
+  const map={
+    0:temp>38?"🌡️ Heatwave":temp>32?"☀️ Hot":temp>24?"☀️ Sunny":temp>15?"☀️ Sunny":"☀️ Clear",
+    1:"🌤️ Clear",2:"⛅ Partly Cloudy",3:hum>85?"☁️ Humid":"☁️ Overcast",
+    45:"🌫️ Foggy",48:"🌫️ Misty",
+    51:"🌦️ Drizzle",53:"🌦️ Drizzle",55:"🌧️ Drizzle",
+    56:"🌨️ Sleet",57:"🌨️ Sleet",
+    61:"🌧️ Rainy",63:"🌧️ Rainy",65:"🌧️ Downpour",
+    66:"🌨️ Sleet",67:"🌨️ Sleet",
+    71:"❄️ Snowy",73:"❄️ Snowy",75:"❄️ Blizzard",77:"❄️ Frosty",
+    80:"🌦️ Shower",81:"🌦️ Shower",82:"🌧️ Downpour",
+    85:"🌨️ Snow Shower",86:"🌨️ Snow Shower",
+    95:wind>60?"⛈️ Stormy":"⛈️ Thunderstorm",
+    96:"⛈️ Hail",99:"⛈️ Hail",
+  };
+  if(map[code]){const t=map[code];return{icon:t.split(" ")[0],term:t.split(" ").slice(1).join(" ")};}
+  // Wind-based fallback
+  if(wind>90)return{icon:"🌀",term:"Cyclonic"};
+  if(wind>70)return{icon:"🌀",term:"Typhoon"};
+  if(wind>55)return{icon:"💨",term:"Stormy"};
+  if(wind>40)return{icon:"💨",term:"Windy"};
+  if(wind>25)return{icon:"🌬️",term:"Gusty"};
+  if(wind>15)return{icon:"🌬️",term:"Breezy"};
+  // Temp fallback
+  if(temp>35)return{icon:"☀️",term:"Hot"};
+  if(temp>25)return{icon:"🌤️",term:"Warm"};
+  if(temp>15)return{icon:"🌡️",term:"Cool"};
+  if(temp>5)return{icon:"🌡️",term:"Cold"};
+  if(temp>-5)return{icon:"🥶",term:"Chilly"};
+  if(temp>-15)return{icon:"❄️",term:"Freezing"};
+  return{icon:"🧊",term:"Icy"};
+}
+function applyWeatherToCard(key,data){
+  document.querySelectorAll(`.cc[data-key="${key}"] .cc-weather`).forEach(el=>{
+    el.textContent=data.icon+" "+data.term+" · "+data.temp+"°C";el.classList.add("loaded");
+  });
+}
+function updateFSWeather(data){
+  const el=document.getElementById("fs-weather");
+  if(el){el.textContent=data.icon+" "+data.term+" · "+data.temp+"°C · Wind "+data.wind+"km/h";el.style.display="block";}
+}
+// IntersectionObserver for lazy weather loading
+const wxObserver=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting){const c=cardDataMap[e.target.dataset.key];if(c)fetchWeather(c);}});
+},{rootMargin:"120px"});
+
+// ═══ ABBR MAP ═══
+const AMAP={"EST/EDT":"EST=UTC−5 (winter) · EDT=UTC−4 (summer DST)","CST/CDT":"CST=UTC−6 (winter) · CDT=UTC−5 (summer DST)","MST/MDT":"MST=UTC−7 (winter) · MDT=UTC−6 (summer DST)","PST/PDT":"PST=UTC−8 (winter) · PDT=UTC−7 (summer DST)","AKST/AKDT":"AKST=UTC−9 (winter) · AKDT=UTC−8 (summer DST)","GMT/BST":"GMT=UTC+0 (winter) · BST=UTC+1 (summer DST)","GMT/IST":"GMT=UTC+0 (winter) · IST=UTC+1 (summer DST)","AEST/AEDT":"AEST=UTC+10 (winter) · AEDT=UTC+11 (summer DST)","ACST/ACDT":"ACST=UTC+9:30 (winter) · ACDT=UTC+10:30 (summer DST)","NZST/NZDT":"NZST=UTC+12 (winter) · NZDT=UTC+13 (summer DST)","AST/ADT":"AST=UTC−4 (winter) · ADT=UTC−3 (summer DST)","NST/NDT":"NST=UTC−3:30 (winter) · NDT=UTC−2:30 (summer DST)","BST":"BST=UTC+6 Bangladesh Standard Time (no DST)","IST":"IST=UTC+5:30 India Standard Time (no DST)","JST":"JST=UTC+9 Japan Standard Time (no DST)","KST":"KST=UTC+9 Korea Standard Time (no DST)","SGT":"SGT=UTC+8 Singapore Time (no DST)","GST":"GST=UTC+4 Gulf Standard Time (no DST)","MSK":"MSK=UTC+3 Moscow Time (no DST)","NPT":"NPT=UTC+5:45 Nepal Time (no DST)","IRST":"IRST=UTC+3:30 Iran Standard Time","MMT":"MMT=UTC+6:30 Myanmar Time (no DST)","AFT":"AFT=UTC+4:30 Afghanistan Time (no DST)","PKT":"PKT=UTC+5 Pakistan Standard Time","ICT":"ICT=UTC+7 Indochina Time (no DST)","WIB":"WIB=UTC+7 Western Indonesia Time","MYT":"MYT=UTC+8 Malaysia Time (no DST)","TRT":"TRT=UTC+3 Turkey Time (no DST)","MST":"MST=UTC−7 Mountain Standard Time (no DST)","HST":"HST=UTC−10 Hawaii Standard Time (no DST)","HKT":"HKT=UTC+8 Hong Kong Time (no DST)","CST":"CST=UTC+8 China Standard Time (no DST)"};
+const SOUTH=["Australia","New Zealand","Argentina","Brazil","Chile","Uruguay","Paraguay","Bolivia","Peru","South Africa","Namibia","Mozambique","Zimbabwe","Zambia","Madagascar","Malawi","Botswana","Lesotho","Eswatini","Tanzania","Fiji","Vanuatu","Solomon Islands","Papua New Guinea","Samoa","Tonga"];
+
+// ═══ UTILS ═══
+function getOffMin(tz,d){try{const p=new Intl.DateTimeFormat("en",{timeZone:tz,timeZoneName:"shortOffset"}).formatToParts(d).find(x=>x.type==="timeZoneName");if(p){const m=p.value.match(/GMT([+-])(\d+)(?::(\d+))?/);if(m)return(parseInt(m[2])*60+parseInt(m[3]||0))*(m[1]==="-"?-1:1);}return 0;}catch(e){return 0;}}
+function getLiveOff(tz,d){try{const p=new Intl.DateTimeFormat("en",{timeZone:tz,timeZoneName:"shortOffset"}).formatToParts(d).find(x=>x.type==="timeZoneName");if(p)return{g:p.value,u:p.value.replace("GMT","UTC")};}catch(e){}return{g:"GMT+0",u:"UTC+0"};}
+function getDSTInfo(tz,d){try{const yr=d.getFullYear(),jan=new Date(yr,0,15),jul=new Date(yr,6,15);const jO=getOffMin(tz,jan),juO=getOffMin(tz,jul),cO=getOffMin(tz,d);if(jO===juO)return{label:"— No DST",cls:"cc-dst-none"};return cO===Math.max(jO,juO)?{label:"🟡 DST Active",cls:"cc-dst-active"}:{label:"⚪ Standard Time",cls:"cc-dst-std"};}catch(e){return{label:"",cls:""};}}
+function getTimeDiff(ctz,d){const diff=getOffMin(ctz,d)-getOffMin(homeTZ,d);if(diff===0)return"Same time as "+homeCity;const abs=Math.abs(diff),h=Math.floor(abs/60),m=abs%60;const t=h>0&&m>0?h+"h "+m+"min":h>0?h+(h===1?" hour":" hours"):m+" min";return t+" "+(diff>0?"ahead of":"behind")+" "+homeCity;}
+function getSeason(d,tz,country){try{const m=parseInt(d.toLocaleString("en-US",{timeZone:tz,month:"numeric"})),day=parseInt(d.toLocaleString("en-US",{timeZone:tz,day:"numeric"}));const south=SOUTH.some(s=>country.includes(s)),adj=south?((m+5)%12)+1:m,part=day<=10?"Early ":day<=20?"Mid ":"Late ";const s=adj===12||adj<=2?"Winter":adj<=5?"Spring":adj<=8?"Summer":"Autumn";return(s==="Winter"?"❄️ ":s==="Spring"?"🌸 ":s==="Summer"?"☀️ ":"🍂 ")+part+s;}catch(e){return "";}}
+function getTOD(h,mn){const t=h*60+(mn||0);if(t===0)return{label:"Midnight",cls:"tod-midnight",icon:"🌑"};if(t<240)return{label:"Late Night",cls:"tod-latenight",icon:"🌙"};if(t<360)return{label:"Early Morning",cls:"tod-earlymorning",icon:"🌄"};if(t<540)return{label:"Morning",cls:"tod-morning",icon:"☀️"};if(t<720)return{label:"Late Morning",cls:"tod-latemorning",icon:"🌤"};if(t===720)return{label:"Noon",cls:"tod-noon",icon:"🌞"};if(t<900)return{label:"Early Afternoon",cls:"tod-earlyafternoon",icon:"⛅"};if(t<1020)return{label:"Late Afternoon",cls:"tod-lateafternoon",icon:"🌆"};if(t<1200)return{label:"Evening",cls:"tod-evening",icon:"🌇"};return{label:"Night",cls:"tod-night",icon:"🌃"};}
+function fmtTime(d,tz,fmt){if(fmt===24)return d.toLocaleTimeString("en-GB",{timeZone:tz,hour:"2-digit",minute:"2-digit",second:"2-digit"});const t=d.toLocaleTimeString("en-US",{timeZone:tz,hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:true});const m=t.match(/(\d+):(\d+):(\d+)\s*(AM|PM)/i);return m?{hh:m[1],mm:m[2],ss:m[3],ampm:m[4].toUpperCase()}:{hh:"--",mm:"--",ss:"--",ampm:"AM"};}
+function fmtLong(d,tz){return d.toLocaleDateString("en-US",{timeZone:tz,weekday:"long",year:"numeric",month:"long",day:"numeric"});}
+function fmtShort(d,tz){return d.toLocaleDateString("en-US",{timeZone:tz,weekday:"short",month:"short",day:"numeric",year:"numeric"});}
+function getHour(d,tz){return parseInt(d.toLocaleTimeString("en-GB",{timeZone:tz,hour:"2-digit",hour12:false}));}
+function getMin(d,tz){return parseInt(d.toLocaleTimeString("en-GB",{timeZone:tz,hour:"2-digit",minute:"2-digit",hour12:false}).split(":")[1]);}
+function getDN(h){return h>=5&&h<8?"dawn":h>=8&&h<18?"day":h>=18&&h<21?"dusk":"night";}
+function getUTC(d){return[d.getUTCHours(),d.getUTCMinutes(),d.getUTCSeconds()].map(n=>String(n).padStart(2,"0")).join(":");}
+function getActiveAbbr(abbr,utcLabel,tz,d){if(!abbr.includes("/"))return abbr;const pts=abbr.split("/"),labs=utcLabel.replace("UTC","").split("/");if(labs.length<2)return pts[0];const lh=getOffMin(tz,d)/60,o1=parseFloat(labs[0].replace(":","."));const o2=parseFloat(labs[1].replace(":","."));return Math.abs(lh-o2)<Math.abs(lh-o1)?pts[1]:pts[0];}
+
+// ═══ CARD DATA MAP ═══
+const cardDataMap={};
+
+// ═══ HOME + HEADER CLOCK ═══
+function updateHome(){
+  const now=new Date(),r=fmtTime(now,homeTZ,12);
+  document.getElementById("h-hh").textContent=r.hh;
+  document.getElementById("h-mm").textContent=r.mm;
+  document.getElementById("h-ss").textContent=r.ss;
+  const b=document.getElementById("hampm");b.textContent=r.ampm;b.className="home-ampm "+r.ampm.toLowerCase();
+  document.getElementById("hdate").textContent=fmtLong(now,homeTZ)+" · "+homeCity;
+  document.getElementById("butc").textContent=getUTC(now);
+  document.getElementById("bunix").textContent=Math.floor(now.getTime()/1000);
+  const lo=getLiveOff(homeTZ,now);
+  document.getElementById("boff").textContent=lo.g;
+  // header clock
+  const hcF=document.getElementById("hc-flag");
+  const fu=flagUrl(ISO[homeCountry]||"BD");
+  hcF.src=fu;hcF.style.display="";
+  document.getElementById("hc-city").textContent=homeCity;
+  document.getElementById("hc-time").innerHTML=r.hh+'<span class="hc-colon">:</span>'+r.mm+'<span class="hc-colon">:</span>'+r.ss;
+  const hcAp=document.getElementById("hc-ap");hcAp.textContent=r.ampm;hcAp.className="hc-ap "+r.ampm.toLowerCase();
+  document.getElementById("hc-date").textContent=fmtShort(now,homeTZ);
+}
+
+// ═══ MAKE CARD ═══
+function makeCard(c,now,longDate){
+  const key=c.city+"|"+c.tz;
+  cardDataMap[key]=c;
+  const r=fmtTime(now,c.tz,hourFmt);
+  const h=getHour(now,c.tz),mn=getMin(now,c.tz);
+  const dn=getDN(h),isPinned=pinned.includes(key),isFav=favs.includes(key);
+  const lo=getLiveOff(c.tz,now),aa=getActiveAbbr(c.abbr,c.utcLabel,c.tz,now);
+  const meaning=AMAP[c.abbr]||(c.abbr+" = "+c.utcLabel);
+  const dateStr=longDate?fmtLong(now,c.tz):fmtShort(now,c.tz);
+  const tod=getTOD(h,mn),season=getSeason(now,c.tz,c.country);
+  const diff=getTimeDiff(c.tz,now),dst=getDSTInfo(c.tz,now);
+  const flag=getFlag(c.country,c.group,16);
+  const tzBlock=showOffsets?`<div class="cc-tzb"><div class="cc-live">${lo.g}=${lo.u}·${aa}</div><div>${meaning}</div></div>`:"";
+  let th;
+  if(hourFmt===24){const p=r.split(":");th=`<div class="cc-tr"><span class="cc-t"><span class="cc-hh">${p[0]}</span><span class="cc-colon">:</span><span class="cc-mm">${p[1]}</span><span class="cc-colon">:</span><span class="cc-ss cc-s">${p[2]}</span></span></div>`;}
+  else{th=`<div class="cc-tr"><span class="cc-t"><span class="cc-hh">${r.hh}</span><span class="cc-colon">:</span><span class="cc-mm">${r.mm}</span><span class="cc-colon">:</span><span class="cc-ss cc-s">${r.ss}</span></span><span class="ap ${r.ampm.toLowerCase()}">${r.ampm}</span></div>`;}
+  const div=document.createElement("div");
+  div.className=`cc reg-${c.region.replace(/ /g,"")}${isPinned?" pinned":""}${isFav?" fav":""}`;
+  div.dataset.key=key;
+  div.setAttribute("draggable","true");
+  div.innerHTML=`<div class="cc-reg">${c.region}</div><div class="cc-city-row">${flag}<span class="cc-city">${c.city}</span></div><div class="cc-ctry">${c.country}</div>${th}<div class="cc-date">${dateStr}</div><div class="cc-tod ${tod.cls}">${tod.icon} ${tod.label}</div><div class="cc-diff">${diff}</div><div class="cc-season">${season}</div><div class="cc-weather"></div><div class="cc-dst ${dst.cls}">${dst.label}</div><div class="cc-tz">${aa}·${c.utcLabel}</div>${tzBlock}<div class="cc-dn ${dn}"></div>`;
+  // Check weather cache
+  const cached=wxCache.get(key);if(cached)applyWeatherToCard(key,cached.data);
+  // Pin btn
+  const pinBtn=document.createElement("button");
+  pinBtn.title=isPinned?"Unpin":"Pin to top";
+  pinBtn.style.cssText=`position:absolute;bottom:20px;right:26px;background:none;border:none;font-size:.72rem;cursor:pointer;padding:2px 3px;color:${isPinned?"var(--accent2)":"var(--muted)"}`;
+  pinBtn.textContent=isPinned?"★":"☆";
+  pinBtn.addEventListener("click",e=>{e.stopPropagation();togglePin(c);});
+  div.appendChild(pinBtn);
+  // Fav btn
+  const favBtn=document.createElement("button");
+  favBtn.title=isFav?"Remove fav":"Add to fav";
+  favBtn.style.cssText=`position:absolute;bottom:20px;right:7px;background:none;border:none;font-size:.72rem;cursor:pointer;padding:2px 3px;color:${isFav?"#f43f5e":"var(--muted)"}`;
+  favBtn.textContent=isFav?"♥":"♡";
+  favBtn.addEventListener("click",e=>{e.stopPropagation();toggleFav(c);});
+  div.appendChild(favBtn);
+  // FIXED click/dblclick
+  div.addEventListener("click",e=>{
+    if(e.target===pinBtn||e.target===favBtn)return;
+    if(div._ct)return;
+    div._ct=setTimeout(()=>{
+      div._ct=null;
+      document.querySelectorAll(".card-confirm").forEach(el=>el.remove());
+      const cf=document.createElement("div");cf.className="card-confirm";
+      cf.innerHTML=`<p>Set <strong>${c.city}</strong> as your home clock?</p><div class="confirm-btns"><button class="cc-yes">✓ Yes</button><button class="cc-no">✕ No</button></div>`;
+      cf.querySelector(".cc-yes").addEventListener("click",ev=>{ev.stopPropagation();setHomeFromCard(c);cf.remove();});
+      cf.querySelector(".cc-no").addEventListener("click",ev=>{ev.stopPropagation();cf.remove();});
+      div.appendChild(cf);const t=setTimeout(()=>cf.remove(),5000);
+      cf.querySelector(".cc-yes").addEventListener("click",()=>clearTimeout(t));
+      cf.querySelector(".cc-no").addEventListener("click",()=>clearTimeout(t));
+    },280);
+  });
+  div.addEventListener("dblclick",e=>{
+    e.stopPropagation();
+    if(div._ct){clearTimeout(div._ct);div._ct=null;}
+    document.querySelectorAll(".card-confirm").forEach(el=>el.remove());
+    openFS(c);
+  });
+  // Drag
+  div.addEventListener("dragstart",e=>{dragSrcKey=key;setTimeout(()=>div.classList.add("dragging"),0);e.dataTransfer.effectAllowed="move";});
+  div.addEventListener("dragend",()=>{div.classList.remove("dragging");document.querySelectorAll(".cc.drag-over").forEach(el=>el.classList.remove("drag-over"));});
+  div.addEventListener("dragover",e=>{e.preventDefault();if(dragSrcKey!==key)div.classList.add("drag-over");});
+  div.addEventListener("dragleave",()=>div.classList.remove("drag-over"));
+  div.addEventListener("drop",e=>{
+    e.preventDefault();div.classList.remove("drag-over");
+    if(!dragSrcKey||dragSrcKey===key)return;
+    const ordered=getOrderedData(getData());
+    const keys=ordered.map(x=>x.city+"|"+x.tz);
+    const si=keys.indexOf(dragSrcKey),di=keys.indexOf(key);
+    if(si<0||di<0)return;
+    const[moved]=keys.splice(si,1);keys.splice(di,0,moved);
+    localStorage.setItem(ORDER_KEY+viewMode,JSON.stringify(keys));render();
+  });
+  // weather lazy load
+  wxObserver.observe(div);
+  return div;
+}
+function setHomeFromCard(c){
+  homeTZ=c.tz;homeCity=c.city;homeCountry=c.country;homeAbbr=c.abbr;
+  const flag=getFlag(c.country,c.group);
+  document.getElementById("home-label").innerHTML=`${flag} ${c.city.toUpperCase()}, ${c.country.toUpperCase()} (${c.abbr}) <button class="chg-btn" onclick="openPicker()">✎ Change</button>`;
+  updateHome();renderCalendar();
+}
+
+// ═══ IN-PLACE TICK ═══
+function tickClocks(){
+  const now=new Date();
+  document.querySelectorAll(".cc[data-key]").forEach(card=>{
+    const c=cardDataMap[card.dataset.key];if(!c||card.classList.contains("dragging"))return;
+    const r=fmtTime(now,c.tz,hourFmt);
+    const hhEl=card.querySelector(".cc-hh"),mmEl=card.querySelector(".cc-mm"),ssEl=card.querySelector(".cc-ss");
+    if(hourFmt===24){const p=r.split(":");if(hhEl)hhEl.textContent=p[0];if(mmEl)mmEl.textContent=p[1];if(ssEl)ssEl.textContent=p[2];}
+    else{if(hhEl)hhEl.textContent=r.hh;if(mmEl)mmEl.textContent=r.mm;if(ssEl)ssEl.textContent=r.ss;const ap=card.querySelector(".ap");if(ap){ap.textContent=r.ampm;ap.className="ap "+r.ampm.toLowerCase();}}
+    const h=getHour(now,c.tz),mn=getMin(now,c.tz);
+    const todEl=card.querySelector(".cc-tod");if(todEl){const t=getTOD(h,mn);todEl.textContent=t.icon+" "+t.label;todEl.className="cc-tod "+t.cls;}
+    const dnEl=card.querySelector(".cc-dn");if(dnEl)dnEl.className="cc-dn "+getDN(h);
+    const lEl=card.querySelector(".cc-live");if(lEl&&showOffsets){const lo=getLiveOff(c.tz,now);const aa=getActiveAbbr(c.abbr,c.utcLabel,c.tz,now);lEl.textContent=lo.g+"="+lo.u+"·"+aa;}
+  });
+}
+
+// ═══ DATA ═══
+function getCustom(s){try{return JSON.parse(localStorage.getItem(CUSTOM_KEY+s)||"[]");}catch(e){return[];}}
+function saveCustom(s,a){localStorage.setItem(CUSTOM_KEY+s,JSON.stringify(a));}
+function getData(){
+  if(viewMode==="countries")return[...COUNTRIES,...getCustom("countries")];
+  if(viewMode==="cities")return[...MAJOR_CITIES,...getCustom("cities")];
+  if(viewMode==="tier1")return[...TIER1,...getCustom("tier1")];
+  const all=[...COUNTRIES,...MAJOR_CITIES,...TIER1,...getCustom("countries"),...getCustom("cities"),...getCustom("tier1")];
+  return favs.map(k=>all.find(c=>c.city+"|"+c.tz===k)).filter(Boolean);
+}
+function getOrderedData(data){
+  if(viewMode==="favourites")return data;
+  const saved=localStorage.getItem(ORDER_KEY+viewMode);if(!saved)return data;
+  try{const order=JSON.parse(saved);const map=new Map(data.map(c=>[c.city+"|"+c.tz,c]));const ordered=order.map(k=>map.get(k)).filter(Boolean);const inSet=new Set(order);data.forEach(c=>{if(!inSet.has(c.city+"|"+c.tz))ordered.push(c);});return ordered;}catch(e){return data;}
+}
+function getFilteredData(){
+  const q=searchQ.toLowerCase();
+  return getOrderedData(getData()).filter(c=>{
+    const mR=regionFilter==="all"||c.region===regionFilter;
+    const mS=!q||c.city.toLowerCase().includes(q)||c.country.toLowerCase().includes(q)||c.abbr.toLowerCase().includes(q)||c.tz.toLowerCase().includes(q)||(c.group&&c.group.toLowerCase().includes(q));
+    return mR&&mS;
+  });
+}
+
+// ═══ RENDER ═══
+function render(){
+  const now=new Date(),long=(viewMode==="countries"),fil=getFilteredData();
+  const mg=document.getElementById("mgrid"),pg=document.getElementById("pgrid"),ps=document.getElementById("pin-sec"),nr=document.getElementById("nores");
+  mg.innerHTML="";pg.innerHTML="";
+  document.getElementById("nfav").textContent="("+favs.length+")";
+  if(viewMode==="favourites"){
+    ps.style.display="none";
+    if(fil.length===0){mg.innerHTML='<div style="color:var(--muted);padding:28px;font-size:.88rem;font-weight:700;text-align:center">No favourites yet.<br><span style="font-size:.74rem;opacity:.65">Click ♡ on any clock to add it here.</span></div>';}
+    else{const sg=document.createElement("div");sg.className="cg-grid";fil.forEach(c=>sg.appendChild(makeCard(c,now,false)));mg.appendChild(sg);}
+    nr.style.display="none";document.getElementById("main-lbl").textContent="♥ Favourites ("+fil.length+")";return;
+  }
+  if(viewMode==="tier1"&&!searchQ&&regionFilter==="all"){
+    const grps={USA:{l:"🇺🇸 United States — 50 States",i:[]},UK:{l:"🇬🇧 United Kingdom — 4 Countries",i:[]},CA:{l:"🇨🇦 Canada — 13 Provinces & Territories",i:[]},AU:{l:"🇦🇺 Australia — 8 States & Territories",i:[]},NZ:{l:"🇳🇿 New Zealand — 16 Regions",i:[]},IE:{l:"🇮🇪 Ireland — 26 Counties",i:[]},CUSTOM:{l:"⚙ Custom",i:[]}};
+    fil.forEach(c=>{const g=grps[c.group]||grps.CUSTOM;g.i.push(c);});
+    Object.values(grps).forEach(g=>{if(!g.i.length)return;const h=document.createElement("div");h.className="t1h";h.textContent=g.l;mg.appendChild(h);const sg=document.createElement("div");sg.className="cg-grid";sg.style.marginBottom="7px";g.i.forEach(c=>sg.appendChild(makeCard(c,now,false)));mg.appendChild(sg);});
+    ps.style.display="none";nr.style.display="none";document.getElementById("main-lbl").textContent="🗺 Tier 1 — "+fil.length+" Subdivisions";return;
+  }
+  const pc=fil.filter(c=>pinned.includes(c.city+"|"+c.tz));
+  ps.style.display=pc.length?"":"none";pc.forEach(c=>pg.appendChild(makeCard(c,now,long)));
+  const sg=document.createElement("div");sg.className="cg-grid";fil.forEach(c=>sg.appendChild(makeCard(c,now,long)));mg.appendChild(sg);
+  nr.style.display=fil.length?"none":"";
+  document.getElementById("main-lbl").textContent=viewMode==="countries"?`🌍 All Countries (195 sovereign + 2 territories = ${fil.length})`:viewMode==="cities"?`🏙 Major Cities (${fil.length})`:`🗺 Tier 1 (${fil.length})`;
+}
+function tick(){updateHome();tickClocks();updateConverter();}
+function fullRender(){updateHome();render();updateConverter();}
+
+// ═══ CONTROLS ═══
+function togglePin(c){const k=c.city+"|"+c.tz;pinned=pinned.includes(k)?pinned.filter(x=>x!==k):[...pinned,k];localStorage.setItem("wc_pinned",JSON.stringify(pinned));render();}
+function toggleFav(c){const k=c.city+"|"+c.tz;favs=favs.includes(k)?favs.filter(x=>x!==k):[...favs,k];localStorage.setItem("wc_favs",JSON.stringify(favs));render();}
+function setView(v){viewMode=v;document.getElementById("bco").className="pill"+(v==="countries"?" p-g":"");document.getElementById("bci").className="pill"+(v==="cities"?" p-a":"");document.getElementById("bt1").className="pill"+(v==="tier1"?" p-p":"");document.getElementById("bfav").className="pill"+(v==="favourites"?" p-fav":"");fullRender();}
+function setReg(r){regionFilter=r;["rall","rAsia","rEur","rAme","rAfr","rPac"].forEach(id=>document.getElementById(id).classList.remove("p-a"));const m={all:"rall",Asia:"rAsia",Europe:"rEur",Americas:"rAme",Africa:"rAfr",Pacific:"rPac"};document.getElementById(m[r]).classList.add("p-a");fullRender();}
+function setFmt(f){hourFmt=f;document.getElementById("f12").className="pill"+(f===12?" p-a":"");document.getElementById("f24").className="pill"+(f===24?" p-a":"");fullRender();}
+function toggleOff(){showOffsets=!showOffsets;document.getElementById("futc").className="pill"+(showOffsets?" p-a":"");fullRender();}
+function resetAll(){viewMode="countries";regionFilter="all";searchQ="";showOffsets=true;hourFmt=12;["countries","cities","tier1"].forEach(m=>localStorage.removeItem(ORDER_KEY+m));document.getElementById("search").value="";document.getElementById("sreset").style.display="none";document.getElementById("f12").className="pill p-a";document.getElementById("f24").className="pill";document.getElementById("futc").className="pill p-a";document.getElementById("bco").className="pill p-g";document.getElementById("bci").className="pill";document.getElementById("bt1").className="pill";document.getElementById("bfav").className="pill";["rall","rAsia","rEur","rAme","rAfr","rPac"].forEach(id=>document.getElementById(id).classList.remove("p-a"));document.getElementById("rall").classList.add("p-a");fullRender();}
+document.getElementById("search").addEventListener("input",e=>{searchQ=e.target.value;document.getElementById("sreset").style.display=searchQ?"block":"none";fullRender();});
+function clearSearch(){document.getElementById("search").value="";searchQ="";document.getElementById("sreset").style.display="none";fullRender();}
+
+// ═══ HOME PICKER ═══
+function openPicker(){document.getElementById("modal").classList.add("open");document.getElementById("msearch").value="";filterModal("");setTimeout(()=>document.getElementById("msearch").focus(),50);}
+function closePicker(){document.getElementById("modal").classList.remove("open");}
+function filterModal(q){
+  const list=document.getElementById("mlist");list.innerHTML="";
+  const lq=q.toLowerCase(),seen=new Map();
+  ALL_PICKER.forEach(c=>{const k=c.city+"|"+c.tz;if(!seen.has(k))seen.set(k,c);});
+  [...seen.values()].filter(c=>!lq||c.city.toLowerCase().includes(lq)||c.country.toLowerCase().includes(lq)||c.abbr.toLowerCase().includes(lq)).slice(0,80).forEach(c=>{
+    const item=document.createElement("div");item.className="mi";
+    const lo=getLiveOff(c.tz,new Date());
+    item.innerHTML=`<span class="mn">${getFlag(c.country,c.group,14)} ${c.city}, ${c.country}</span><span class="mt">${c.abbr}·${lo.g}</span>`;
+    item.addEventListener("click",()=>{setHomeFromCard(c);closePicker();});
+    list.appendChild(item);
+  });
+}
+document.getElementById("modal").addEventListener("click",function(e){if(e.target===this)closePicker();});
+
+// ═══ FULLSCREEN ═══
+function openFS(c){fsCity=c;document.getElementById("fs-overlay").classList.add("open");renderFS();if(fsTimer)clearInterval(fsTimer);fsTimer=setInterval(renderFS,1000);fetchWeather(c);}
+function closeFS(){document.getElementById("fs-overlay").classList.remove("open");if(fsTimer){clearInterval(fsTimer);fsTimer=null;}fsCity=null;}
+document.getElementById("fs-overlay").addEventListener("click",e=>{if(e.target===document.getElementById("fs-overlay"))closeFS();});
+function renderFS(){
+  if(!fsCity)return;const c=fsCity,now=new Date();
+  const r=fmtTime(now,c.tz,hourFmt),h=getHour(now,c.tz),mn=getMin(now,c.tz);
+  const lo=getLiveOff(c.tz,now),aa=getActiveAbbr(c.abbr,c.utcLabel,c.tz,now);
+  const tod=getTOD(h,mn),season=getSeason(now,c.tz,c.country),diff=getTimeDiff(c.tz,now),dst=getDSTInfo(c.tz,now);
+  const flag=getFlag(c.country,c.group,22),meaning=AMAP[c.abbr]||(c.abbr+" = "+c.utcLabel);
+  document.getElementById("fs-reg").textContent=c.region;
+  document.getElementById("fs-city").textContent=c.city;
+  document.getElementById("fs-ctry").innerHTML=flag+" "+c.country;
+  if(hourFmt===24){const p=r.split(":");document.getElementById("fs-time").innerHTML=p[0]+'<span style="animation:blink 1s step-start infinite;display:inline">:</span>'+p[1]+'<span style="animation:blink 1s step-start infinite;display:inline">:</span>'+p[2];document.getElementById("fs-ampm").style.display="none";}
+  else{document.getElementById("fs-time").innerHTML=r.hh+'<span style="animation:blink 1s step-start infinite;display:inline">:</span>'+r.mm+'<span style="animation:blink 1s step-start infinite;display:inline">:</span><span style="font-size:.55em;color:var(--muted)">'+r.ss+'</span>';const ap=document.getElementById("fs-ampm");ap.style.display="";ap.textContent=r.ampm;ap.className="fs-ampm "+r.ampm.toLowerCase();}
+  document.getElementById("fs-date").textContent=fmtLong(now,c.tz);
+  const todEl=document.getElementById("fs-tod");todEl.textContent=tod.icon+" "+tod.label;todEl.className="fs-tod "+tod.cls;
+  document.getElementById("fs-season").textContent=season;
+  document.getElementById("fs-diff").textContent=diff;
+  document.getElementById("fs-dst").textContent=dst.label;document.getElementById("fs-dst").className="fs-dst "+dst.cls;
+  document.getElementById("fs-tz").textContent=lo.g+"="+lo.u+"·"+aa+"·"+c.utcLabel;
+  document.getElementById("fs-meaning").textContent=meaning;
+  const cached=wxCache.get(c.city+"|"+c.tz);if(cached)updateFSWeather(cached.data);
+}
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeFS();closeCalFS();}});
+
+// ═══ SCROLL → HEADER CLOCK ═══
+window.addEventListener("scroll",()=>{
+  const rect=document.getElementById("home-card-el").getBoundingClientRect();
+  document.getElementById("main-header").classList.toggle("scrolled",rect.bottom<0);
+},{passive:true});
+
+// ═══ FONT SELECTOR ═══
+const fontWrap=document.getElementById("font-wrap"),fontMenu=document.getElementById("font-menu");
+document.getElementById("font-trigger").addEventListener("click",e=>{e.stopPropagation();fontWrap.classList.toggle("open");});
+document.addEventListener("click",e=>{if(!fontWrap.contains(e.target))fontWrap.classList.remove("open");});
+document.querySelectorAll(".fbtn").forEach(b=>b.addEventListener("click",()=>{
+  document.documentElement.style.setProperty("--font-clock","'"+b.dataset.font+"', monospace");
+  document.querySelectorAll(".fbtn").forEach(x=>x.classList.remove("active"));b.classList.add("active");
+  document.getElementById("font-current").textContent=b.dataset.name;
+  fontWrap.classList.remove("open");
+  fullRender(); // rebuild cards to apply font
+}));
+
+// ═══ THEMES ═══
+document.querySelectorAll(".tbtn").forEach(b=>b.addEventListener("click",()=>{document.body.className="th-"+b.dataset.t;document.querySelectorAll(".tbtn").forEach(x=>x.classList.remove("active"));b.classList.add("active");}));
+
+// ═══ CALENDAR ═══
+const CAL_MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
+const CAL_WD=["Su","Mo","Tu","We","Th","Fr","Sa"];
+function initCalendar(){const now=new Date(),local=new Date(now.toLocaleString("en-US",{timeZone:homeTZ}));calYear=local.getFullYear();calMonth=local.getMonth();renderCalendar();}
+function buildGrid(wdId,daysId){
+  const wdEl=document.getElementById(wdId);if(!wdEl)return;
+  wdEl.innerHTML="";CAL_WD.forEach(d=>{const e=document.createElement("div");e.className="cal-wd";e.textContent=d;wdEl.appendChild(e);});
+  const grid=document.getElementById(daysId);if(!grid)return;grid.innerHTML="";
+  const now=new Date(),local=new Date(now.toLocaleString("en-US",{timeZone:homeTZ}));
+  const todD=local.getDate(),todM=local.getMonth(),todY=local.getFullYear();
+  const first=new Date(calYear,calMonth,1).getDay(),daysIn=new Date(calYear,calMonth+1,0).getDate(),prev=new Date(calYear,calMonth,0).getDate();
+  for(let i=first-1;i>=0;i--){const d=document.createElement("div");d.className="cal-day other-month";d.textContent=prev-i;grid.appendChild(d);}
+  for(let day=1;day<=daysIn;day++){const d=document.createElement("div");d.className="cal-day";d.textContent=day;if(day===todD&&calMonth===todM&&calYear===todY)d.classList.add("today");grid.appendChild(d);}
+  const total=Math.ceil((first+daysIn)/7)*7;for(let i=first+daysIn,n=1;i<total;i++,n++){const d=document.createElement("div");d.className="cal-day other-month";d.textContent=n;grid.appendChild(d);}
+}
+function renderCalendar(){
+  const lbl=CAL_MONTHS[calMonth]+" "+calYear;
+  ["cal-title","cal-fs-title"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=lbl;});
+  ["cal-tz-hint","cal-fs-tz"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=homeCity+" Time";});
+  buildGrid("cal-wds","cal-days");buildGrid("cal-fs-wds","cal-fs-days");
+  const now=new Date(),local=new Date(now.toLocaleString("en-US",{timeZone:homeTZ}));
+  const hint="📍 Today in "+homeCity+": "+local.getDate()+" "+CAL_MONTHS[local.getMonth()]+" "+local.getFullYear();
+  ["cal-hint","cal-fs-hint"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=hint;});
+}
+function calPrevMonth(e){if(e)e.stopPropagation();calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCalendar();}
+function calNextMonth(e){if(e)e.stopPropagation();calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCalendar();}
+function calPrevYear(e){if(e)e.stopPropagation();calYear--;renderCalendar();}
+function calNextYear(e){if(e)e.stopPropagation();calYear++;renderCalendar();}
+function toggleCal(){calOpen=!calOpen;const body=document.getElementById("cal-body"),btn=document.getElementById("cal-toggle-btn"),arrow=document.getElementById("cal-arrow");body.classList.toggle("open",calOpen);btn.classList.toggle("open",calOpen);arrow.textContent=calOpen?"▲ Hide":"▼ Show";if(calOpen)renderCalendar();}
+function openCalFS(){document.getElementById("cal-fs-overlay").classList.add("open");renderCalendar();}
+function closeCalFS(){document.getElementById("cal-fs-overlay").classList.remove("open");}
+document.getElementById("cal-fs-overlay").addEventListener("click",e=>{if(e.target===document.getElementById("cal-fs-overlay"))closeCalFS();});
+const cw=document.getElementById("cal-widget");if(cw)cw.addEventListener("dblclick",e=>{e.stopPropagation();openCalFS();});
+
+// ═══ ADMIN ═══
+async function sha256(s){const buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s+ADMIN_SALT));return[...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,"0")).join("");}
+async function initAdmin(){if(!localStorage.getItem(ADMIN_KEY))localStorage.setItem(ADMIN_KEY,await sha256("Admin@2026"));}
+initAdmin();
+let adminIn=false,lc=0,lt=null;
+document.getElementById("logo-click").addEventListener("click",()=>{lc++;if(lt)clearTimeout(lt);lt=setTimeout(()=>lc=0,2000);if(lc>=5){lc=0;openAdmin();}});
+function openAdmin(){document.getElementById("adm-overlay").classList.add("open");if(adminIn){document.getElementById("adm-login").style.display="none";document.getElementById("adm-panel").style.display="";}else{document.getElementById("adm-login").style.display="";document.getElementById("adm-panel").style.display="none";document.getElementById("adm-pass").value="";document.getElementById("adm-err").textContent="";}}
+function closeAdmin(){document.getElementById("adm-overlay").classList.remove("open");}
+document.getElementById("adm-overlay").addEventListener("click",function(e){if(e.target===this)closeAdmin();});
+async function doLogin(){const h=await sha256(document.getElementById("adm-pass").value);if(h===localStorage.getItem(ADMIN_KEY)){adminIn=true;document.getElementById("adm-login").style.display="none";document.getElementById("adm-panel").style.display="";["countries","cities","tier1"].forEach(s=>buildAdminForm(s));admTab("countries");}else document.getElementById("adm-err").textContent="Incorrect password.";}
+const FORM_FIELDS=[{id:"city",label:"City Name",ph:"e.g. Dhaka"},{id:"country",label:"Country Name",ph:"e.g. Bangladesh"},{id:"region",label:"Region",type:"select",opts:["Asia","Europe","Americas","Africa","Pacific"]},{id:"tz",label:"IANA Timezone",ph:"e.g. Asia/Dhaka"},{id:"abbr",label:"Abbr",ph:"e.g. BST"},{id:"utcLabel",label:"UTC Label",ph:"e.g. UTC+6"}];
+function buildAdminForm(s){const form=document.getElementById("adm-"+s+"-form");form.innerHTML="";FORM_FIELDS.forEach(f=>{const lbl=document.createElement("label");lbl.textContent=f.label;let el;if(f.type==="select"){el=document.createElement("select");f.opts.forEach(o=>el.add(new Option(o,o)));}else{el=document.createElement("input");el.type="text";el.placeholder=f.ph||"";}el.id="adm-"+s+"-"+f.id;lbl.appendChild(el);form.appendChild(lbl);});if(s==="tier1"){const lbl2=document.createElement("label");lbl2.textContent="Group";const sel=document.createElement("select");sel.id="adm-tier1-group";["USA","UK","CA","AU","NZ","IE","OTHER"].forEach(o=>sel.add(new Option(o,o)));lbl2.appendChild(sel);form.appendChild(lbl2);}refreshAdminList(s);}
+function admAdd(s){const get=id=>document.getElementById("adm-"+s+"-"+id)?.value?.trim();const city=get("city"),country=get("country"),region=get("region"),tz=get("tz"),abbr=get("abbr"),utcLabel=get("utcLabel");if(!city||!country||!tz||!abbr||!utcLabel){alert("Please fill all fields.");return;}const entry={city,country,region,tz,abbr,utcLabel};if(s==="tier1")entry.group=document.getElementById("adm-tier1-group")?.value||"OTHER";const arr=getCustom(s);arr.push(entry);saveCustom(s,arr);refreshAdminList(s);FORM_FIELDS.forEach(f=>{const el=document.getElementById("adm-"+s+"-"+f.id);if(el&&el.tagName==="INPUT")el.value="";});fullRender();}
+function admDelete(s,i){const arr=getCustom(s);arr.splice(i,1);saveCustom(s,arr);refreshAdminList(s);fullRender();}
+function refreshAdminList(s){const list=document.getElementById("adm-"+s+"-list");if(!list)return;list.innerHTML="";const arr=getCustom(s);if(!arr.length){list.innerHTML='<div style="font-size:.68rem;color:var(--muted);padding:6px">No custom entries yet.</div>';return;}arr.forEach((c,i)=>{const item=document.createElement("div");item.className="adm-item";item.innerHTML=`<div><div class="ai-name">${getFlag(c.country,c.group,13)} ${c.city}, ${c.country}</div><div class="ai-tz">${c.tz}·${c.abbr}</div></div>`;const del=document.createElement("button");del.className="adm-del";del.textContent="× Delete";del.onclick=()=>admDelete(s,i);item.appendChild(del);list.appendChild(item);});}
+function admTab(t){document.querySelectorAll(".adm-tab").forEach((b,i)=>b.classList.toggle("active",["countries","cities","tier1","password"][i]===t));document.querySelectorAll(".adm-panel").forEach(p=>p.classList.remove("active"));const panel=document.getElementById("adm-"+t);if(panel)panel.classList.add("active");}
+async function changePass(){const old=document.getElementById("adm-old").value,n1=document.getElementById("adm-new").value,n2=document.getElementById("adm-new2").value,err=document.getElementById("pass-err");if(!old||!n1||!n2){err.textContent="Fill all.";return;}if(n1!==n2){err.textContent="Mismatch.";return;}if(n1.length<8){err.textContent="Min 8 chars.";return;}if(await sha256(old)!==localStorage.getItem(ADMIN_KEY)){err.textContent="Wrong current.";return;}localStorage.setItem(ADMIN_KEY,await sha256(n1));err.style.color="#4ade80";err.textContent="✓ Changed!";setTimeout(()=>{err.textContent="";err.style.color="";},3000);["adm-old","adm-new","adm-new2"].forEach(id=>{document.getElementById(id).value="";});}
+
+// ═══ CONVERTER ═══
+function populateConverter(){
+  const from=document.getElementById("cfrom"),to=document.getElementById("cto");
+  const combined=[...COUNTRIES,...MAJOR_CITIES.filter(c=>!COUNTRIES.find(x=>x.city===c.city&&x.tz===c.tz))];
+  combined.forEach(c=>{from.add(new Option(c.city+" ("+c.abbr+")",c.tz+"||"+c.city));to.add(new Option(c.city+" ("+c.abbr+")",c.tz+"||"+c.city));});
+  [...from.options].forEach((o,i)=>{if(o.value.includes("New_York"))from.selectedIndex=i;});
+  [...to.options].forEach((o,i)=>{if(o.value.includes("London"))to.selectedIndex=i;});
+  const now=new Date();document.getElementById("cdate").value=now.toISOString().slice(0,10);document.getElementById("ctime").value=String(now.getHours()).padStart(2,"0")+":"+String(now.getMinutes()).padStart(2,"0");
+}
+function updateConverter(){
+  const fs=document.getElementById("cfrom").value,ts=document.getElementById("cto").value,dv=document.getElementById("cdate").value,tv=document.getElementById("ctime").value;
+  if(!fs||!ts||!dv||!tv)return;
+  const[ftz,fc]=fs.split("||"),[ttz,tc]=ts.split("||"),[hr,mn]=tv.split(":").map(Number);
+  const fmt=new Intl.DateTimeFormat("en-US",{timeZone:ftz,year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false});
+  const td=new Date(dv+"T"+tv+":00Z");const pf={};fmt.formatToParts(td).forEach(p=>pf[p.type]=p.value);
+  const corr=new Date(td.getTime()+((hr-parseInt(pf.hour==="24"?0:pf.hour))*60+(mn-parseInt(pf.minute)))*60000);
+  const f12=(d,tz)=>d.toLocaleTimeString("en-US",{timeZone:tz,hour:"2-digit",minute:"2-digit",hour12:true});
+  document.getElementById("cbd").textContent=f12(corr,"Asia/Dhaka");document.getElementById("cbdd").textContent=fmtShort(corr,"Asia/Dhaka");
+  document.getElementById("ctol").textContent=tc;document.getElementById("ctov").textContent=f12(corr,ttz);document.getElementById("ctod").textContent=fmtShort(corr,ttz);
+}
+["cfrom","cto","cdate","ctime"].forEach(id=>{document.getElementById(id).addEventListener("change",updateConverter);document.getElementById(id).addEventListener("input",updateConverter);});
+
+// ═══ INIT ═══
+document.getElementById("nco").textContent="(197)";
+document.getElementById("nci").textContent="("+MAJOR_CITIES.length+")";
+document.getElementById("nt1").textContent="("+TIER1.length+")";
+document.getElementById("nfav").textContent="("+favs.length+")";
+populateConverter();initCalendar();fullRender();
+setInterval(tick,1000);
+</script></body></html>
